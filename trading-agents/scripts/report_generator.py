@@ -134,6 +134,96 @@ def _build_info_table_lines(ticker: str, date: str, rating_display: str) -> str:
     ]
     return "\n".join(lines)
 
+def _build_uncertainty_summary(result: Dict[str, Any]) -> str:
+    """构建不确定性诊断摘要。"""
+    uncertainty = result.get("uncertainty_analysis", {})
+    disagreement = uncertainty.get("disagreement", {})
+    adaptive_decision = uncertainty.get("adaptive_decision", {})
+
+    if not disagreement or not adaptive_decision:
+        return "暂无不确定性诊断数据。"
+
+    total = disagreement.get("total", 0)
+    main_type = disagreement.get("main_type", "N/A")
+
+    direction = disagreement.get("direction", 0)
+    confidence = disagreement.get("confidence", 0)
+    evidence = disagreement.get("evidence", 0)
+    risk = disagreement.get("risk", 0)
+    horizon = disagreement.get("horizon", 0)
+
+    control_action = adaptive_decision.get("control_action", "N/A")
+    final_action = adaptive_decision.get("final_action", "N/A")
+    final_position = adaptive_decision.get("final_position", 0)
+    risk_level = adaptive_decision.get("risk_level", "N/A")
+    explanation = adaptive_decision.get("explanation", "")
+
+    action_map = {
+        "normal": "正常执行",
+        "second_round_debate": "触发二轮辩论",
+        "retrieve_again_and_filter": "证据重检索与可信度过滤",
+        "risk_arbitration_reduce_position": "风险仲裁与仓位折减",
+        "ask_for_more_evidence_reduce_overconfidence": "要求补充证据并降低过度自信权重",
+        "split_short_mid_long_strategy": "拆分短线与中长期策略",
+        "risk_veto_or_hold": "风险优先，观望或否决交易",
+    }
+
+    final_action_map = {
+        "buy": "买入",
+        "hold": "持有/观望",
+        "sell": "卖出/减仓",
+    }
+
+    risk_level_map = {
+        "low": "低",
+        "medium": "中",
+        "high": "高",
+    }
+
+    lines = [
+        f"综合分歧指数：{total:.3f}",
+        f"主要分歧类型：{main_type}",
+        f"触发控制动作：{action_map.get(control_action, control_action)}",
+        f"风险自适应建议：{final_action_map.get(final_action, final_action)}",
+        f"建议仓位：{final_position:.2%}",
+        f"风险等级：{risk_level_map.get(risk_level, risk_level)}",
+        "",
+        "分歧来源明细：",
+        f"• 方向分歧：{direction:.3f}",
+        f"• 置信度分歧：{confidence:.3f}",
+        f"• 证据分歧：{evidence:.3f}",
+        f"• 风险分歧：{risk:.3f}",
+        f"• 时间尺度分歧：{horizon:.3f}",
+    ]
+
+    evidences = uncertainty.get("evidences", [])
+    if evidences:
+        lines.append("")
+        lines.append("证据可信度明细：")
+
+        for e in evidences:
+            evidence_id = e.get("evidence_id", "N/A")
+            stance = e.get("stance", "N/A")
+            score = e.get("credibility_score", 0)
+            conflicts = e.get("conflict_ids", [])
+
+            stance_map = {
+                "bullish": "看多",
+                "bearish": "看空",
+                "neutral": "中性",
+            }
+
+            conflict_text = "无" if not conflicts else "、".join(conflicts)
+
+            lines.append(
+                f"• {evidence_id}：方向 {stance_map.get(stance, stance)}，"
+                f"可信度 {score:.3f}，冲突证据：{conflict_text}"
+            )
+
+    if explanation:
+        lines.extend(["", f"系统解释：{explanation}"])
+
+    return "\n".join(lines)
 
 def _extract_time_horizon_logic(decision: str, market_report: str, fundamentals_report: str) -> Dict[str, str]:
     """从分析结果中提取长期/中期/短期逻辑。"""
@@ -224,6 +314,13 @@ def generate_report_blocks(result: Dict[str, Any], history: List[Dict[str, str]]
     # 核心观点
     core_view = decision.split("\n")[0] if decision else "暂无"
     blocks.append(quote_block(f"核心观点：{core_view[:500]}"))
+    blocks.append(text_block(""))
+    
+    # =================================================================
+    # 不确定性诊断与风险自适应决策
+    # =================================================================
+    blocks.append(heading3_block("不确定性诊断与风险自适应决策"))
+    blocks.append(text_block(_build_uncertainty_summary(result)))
     blocks.append(text_block(""))
 
     # 关键数据速览

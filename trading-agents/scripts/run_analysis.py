@@ -28,10 +28,22 @@ import sys
 import textwrap
 from datetime import datetime, timedelta
 from pathlib import Path
-
+from uncertainty.disagreement import AgentOutput, compute_disagreement
+from uncertainty.adaptive_decision import apply_adaptive_decision
+from uncertainty.evidence import Evidence, infer_stance_from_decision, score_evidence, detect_conflicts
+from uncertainty.review_memory import ReviewMemory
 # 将脚本目录加入路径，以便导入 feishu_doc_client 等模块
-SCRIPT_DIR = Path(__file__).parent
+# 将脚本目录加入路径，以便导入 feishu_doc_client 等模块
+SCRIPT_DIR = Path(__file__).parent.resolve()
+PROJECT_ROOT = SCRIPT_DIR.parent.parent.resolve()
+
 sys.path.insert(0, str(SCRIPT_DIR))
+
+# 自动加入 MX Skills 路径，避免换终端后找不到 mx_data
+sys.path.insert(0, str(PROJECT_ROOT / "mx-skills"))
+sys.path.insert(0, str(PROJECT_ROOT / "mx-skills" / "mx-data"))
+sys.path.insert(0, str(PROJECT_ROOT / "mx-skills" / "mx-xuangu"))
+sys.path.insert(0, str(PROJECT_ROOT / "mx-skills" / "mx-search"))
 
 
 def load_minimax_key_from_openclaw() -> str:
@@ -45,14 +57,37 @@ def load_minimax_key_from_openclaw() -> str:
         return cfg.get("models", {}).get("providers", {}).get("minimax", {}).get("apiKey", "")
     except Exception:
         return ""
+    
+def load_deepseek_key_from_openclaw() -> str:
+    """从 OpenClaw 配置中读取 DeepSeek API Key。"""
+    try:
+        config_path = Path.home() / ".openclaw" / "openclaw.json"
+        if not config_path.exists():
+            return ""
 
+        with open(config_path, "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+
+        return (
+            cfg.get("models", {})
+               .get("providers", {})
+               .get("deepseek", {})
+               .get("apiKey", "")
+        )
+    except Exception:
+        return ""
 
 # MX API Key（子进程环境变量注入，确保 fetch_mx_data 可用）
 _MX_KEY = "YOUR_MX_APIKEY"
 os.environ.setdefault("MX_APIKEY", _MX_KEY)
 
 # TradingAgents 项目路径（可通过环境变量 TRADINGAGENTS_PROJECT 覆盖）
-TA_PROJECT = Path(os.environ.get("TRADINGAGENTS_PROJECT", Path.home() / "TradingAgents-Kimi")).resolve()
+TA_PROJECT = Path(
+    os.environ.get(
+        "TRADINGAGENTS_PROJECT",
+        SCRIPT_DIR / "TradingAgents-Kimi"
+    )
+).resolve()
 TA_VENV_PYTHON = TA_PROJECT / ".venv" / "bin" / "python3"
 PYTHON = str(TA_VENV_PYTHON) if TA_VENV_PYTHON.exists() else sys.executable
 
@@ -89,9 +124,9 @@ def build_analysis_script(ticker: str, trade_date: str, market: str, mx_text: st
     """生成内联的 TradingAgents 分析脚本。"""
     output_language = "Chinese" if market == "cn" else "English"
     data_vendor = "mx,tencent,akshare,yfinance"
-    llm_provider = "minimax"
-    deep_model = "MiniMax-M2.7-highspeed"
-    quick_model = "MiniMax-M2.7-highspeed"
+    llm_provider = "deepseek"
+    deep_model = "deepseek-chat"
+    quick_model = "deepseek-chat"
 
     # A股 ticker 转换为 yfinance 格式
     ticker_for_ta = ticker
@@ -121,7 +156,7 @@ import os
 import sys
 
 sys.path.insert(0, r"{TA_PROJECT}")
-os.environ.setdefault("MINIMAX_API_KEY", os.getenv("MINIMAX_API_KEY", ""))
+os.environ.setdefault("DEEPSEEK_API_KEY", os.getenv("DEEPSEEK_API_KEY", ""))
 os.environ.setdefault("MX_APIKEY", os.getenv("MX_APIKEY", "YOUR_MX_APIKEY"))
 
 from tradingagents.graph.trading_graph import TradingAgentsGraph
@@ -182,15 +217,17 @@ def run_tradingagents(ticker: str, trade_date: str, market: str, mx_text: str = 
     """运行 TradingAgents 并返回结构化结果。失败自动重试。"""
     script = build_analysis_script(ticker, trade_date, market, mx_text)
 
-    api_key = os.environ.get("MINIMAX_API_KEY") or load_minimax_key_from_openclaw()
+    api_key = os.environ.get("DEEPSEEK_API_KEY") or load_deepseek_key_from_openclaw()
+
     env = os.environ.copy()
     env["PYTHONPATH"] = str(TA_PROJECT)
     env["PYTHONUNBUFFERED"] = "1"
-    env["MINIMAX_API_KEY"] = api_key
+    env["PYTHONIOENCODING"] = "utf-8"
+    env["DEEPSEEK_API_KEY"] = api_key
     env["MX_APIKEY"] = os.environ.get("MX_APIKEY", "YOUR_MX_APIKEY")
 
     last_error = None
-    for attempt in range(max_retries):
+    for attempt in range(max_retries + 1):
         if attempt > 0:
             print(f"🔄 第 {attempt + 1} 次尝试...", file=sys.stderr)
 
@@ -202,10 +239,12 @@ def run_tradingagents(ticker: str, trade_date: str, market: str, mx_text: str = 
                 timeout=timeout,
                 env=env,
                 cwd=str(TA_PROJECT),
+                encoding="utf-8",
+                errors="replace",
             )
         except subprocess.TimeoutExpired:
             last_error = f"分析超时（{timeout}秒）"
-            print(f"⏰ {last_error}，尝试 {attempt + 1}/{max_retries}", file=sys.stderr)
+            print(f"⏰ {last_error}，尝试 {attempt + 1}/{max_retries + 1}", file=sys.stderr)
             continue
 
         # 成功获取结果，处理输出
@@ -267,16 +306,23 @@ def run_tradingagents(ticker: str, trade_date: str, market: str, mx_text: str = 
 def format_feishu_message(result: dict) -> str:
     """将分析结果格式化为飞书友好的 Markdown 消息。"""
     if result.get("error"):
+        error_msg = (
+            result.get("message")
+            or result.get("stderr")
+            or result.get("error_type")
+            or "无错误信息"
+        )
+
         return textwrap.dedent(f"""\
-            ❌ **TradingAgents 分析失败**
+             **TradingAgents 分析失败**
 
             - 股票: {result.get('ticker', 'N/A')}
             - 日期: {result.get('date', 'N/A')}
             - 返回码: {result.get('returncode', 'N/A')}
 
-            **错误输出:**
+            **错误信息:**
             ```
-            {result.get('stderr', '无错误信息')[:500]}
+            {str(error_msg)[:1000]}
             ```
         """)
 
@@ -315,6 +361,25 @@ def format_feishu_message(result: dict) -> str:
     plan = summarize(trader_plan or investment_plan, 250)
     final = summarize(decision, 300)
 
+    uncertainty = result.get("uncertainty_analysis", {})
+    disagreement = uncertainty.get("disagreement", {})
+    adaptive_decision = uncertainty.get("adaptive_decision", {})
+
+    uncertainty_summary = ""
+    if disagreement and adaptive_decision:
+        uncertainty_summary = textwrap.dedent(f"""\
+        
+        **不确定性诊断与风险自适应决策**
+        - 综合分歧指数：{disagreement.get("total", 0):.3f}
+        - 主要分歧类型：{disagreement.get("main_type", "N/A")}
+        - 触发控制动作：{adaptive_decision.get("control_action", "N/A")}
+        - 风险自适应建议：{adaptive_decision.get("final_action", "N/A")}
+        - 建议仓位：{adaptive_decision.get("final_position", 0):.2%}
+        - 风险等级：{adaptive_decision.get("risk_level", "N/A")}
+        """)
+
+
+
     msg = textwrap.dedent(f"""\
 {rating_emoji} **{ticker} 投研分析完成**  |  {date}
 
@@ -325,7 +390,7 @@ def format_feishu_message(result: dict) -> str:
 
 **核心观点**
 {final}
-
+{uncertainty_summary}
 **交易计划**
 {plan}
 
@@ -339,6 +404,15 @@ def format_feishu_message(result: dict) -> str:
     """)
 
     return msg
+
+def append_blocks_in_batches(client, doc_id: str, blocks: list, batch_size: int = 40):
+    """飞书 docx API 一次 children 最多 50 个，这里分批写入。"""
+    if not blocks:
+        return
+
+    for i in range(0, len(blocks), batch_size):
+        batch = blocks[i:i + batch_size]
+        client.append_blocks(doc_id, batch)
 
 
 def output_to_feishu_doc(result: dict) -> str:
@@ -370,21 +444,22 @@ def output_to_feishu_doc(result: dict) -> str:
     report_blocks = generate_report_blocks(result, history=history)
 
     if is_new:
-        # 新文档：直接写入所有 blocks
-        client.append_blocks(doc_id, report_blocks)
+        # 新文档：分批写入所有 blocks，避免超过飞书单次 50 个 children 限制
+        append_blocks_in_batches(client, doc_id, report_blocks, batch_size=40)
     else:
         # 已有文档：先清除旧内容，再写入新内容
         # 这样避免 index=0 插入导致的编码错乱问题
-        all_blocks = client.list_blocks(doc_id)
+        existing_blocks = client.list_blocks(doc_id)
+
         # 保留第一个 block（页面 block），删除其余内容 blocks
-        if len(all_blocks) > 1:
+        if len(existing_blocks) > 1:
             # 反向删除，避免 index 变化问题
-            for block in reversed(all_blocks[1:]):
+            for block in reversed(existing_blocks[1:]):
                 block_id = block.get("block_id")
                 if block_id:
                     try:
                         client.delete_block(doc_id, block_id)
-                    except:
+                    except Exception:
                         pass  # 忽略删除失败（可能是页面类型 block）
 
         # 生成更新头（第 N 次分析）
@@ -395,7 +470,9 @@ def output_to_feishu_doc(result: dict) -> str:
         header_blocks = generate_update_header_blocks(ticker, date, decision, analysis_count + 1)
 
         all_blocks = header_blocks + report_blocks
-        client.append_blocks(doc_id, all_blocks)
+
+        # 关键修改：这里也必须分批写入，不能直接 client.append_blocks(doc_id, all_blocks)
+        append_blocks_in_batches(client, doc_id, all_blocks, batch_size=40)
 
     # 3. 记录分析到注册表
     record_analysis(ticker, date, decision, doc_id)
@@ -420,6 +497,233 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def infer_decision_from_text(text: str) -> str:
+    text_lower = (text or "").lower()
+
+    bearish_words = [
+        "sell", "underweight", "reduce", "减持", "卖出", "看空",
+        "谨慎", "下行", "风险", "承压", "走弱", "回撤"
+    ]
+
+    bullish_words = [
+        "buy", "overweight", "increase", "买入", "增持", "看多",
+        "利好", "突破", "走强", "改善", "增长", "上行"
+    ]
+
+    bearish_score = sum(1 for w in bearish_words if w in text_lower)
+    bullish_score = sum(1 for w in bullish_words if w in text_lower)
+
+    if bullish_score > bearish_score:
+        return "buy"
+    if bearish_score > bullish_score:
+        return "sell"
+    return "hold"
+
+
+def infer_confidence_from_text(text: str) -> float:
+    text_lower = (text or "").lower()
+
+    strong_words = ["强烈", "明确", "显著", "high confidence", "strong", "确定"]
+    weak_words = ["可能", "不确定", "谨慎", "有限", "低", "uncertain", "low confidence"]
+
+    confidence = 0.60
+
+    if any(w in text_lower for w in strong_words):
+        confidence += 0.15
+
+    if any(w in text_lower for w in weak_words):
+        confidence -= 0.10
+
+    return max(0.35, min(0.90, confidence))
+
+
+def infer_position_from_decision(decision: str, confidence: float) -> float:
+    if decision == "buy":
+        return 0.30 + 0.40 * confidence
+    if decision == "sell":
+        return 0.05
+    return 0.10 + 0.20 * confidence
+
+
+def run_uncertainty_layer(ticker: str, result: dict):
+
+
+    market_report = result.get("market_report", "")
+    fundamentals_report = result.get("fundamentals_report", "")
+    sentiment_report = result.get("sentiment_report", "")
+    news_report = result.get("news_report", "")
+    investment_plan = result.get("investment_plan", "")
+    trader_plan = result.get("trader_investment_plan", "")
+    final_decision = result.get("final_trade_decision", "")
+
+    market_decision = infer_decision_from_text(market_report)
+    market_conf = infer_confidence_from_text(market_report)
+
+    fundamental_decision = infer_decision_from_text(fundamentals_report)
+    fundamental_conf = infer_confidence_from_text(fundamentals_report)
+
+    sentiment_decision = infer_decision_from_text(sentiment_report)
+    sentiment_conf = infer_confidence_from_text(sentiment_report)
+
+    news_decision = infer_decision_from_text(news_report)
+    news_conf = infer_confidence_from_text(news_report)
+
+    risk_decision = infer_decision_from_text(final_decision + "\n" + trader_plan + "\n" + investment_plan)
+    risk_conf = infer_confidence_from_text(final_decision + "\n" + trader_plan + "\n" + investment_plan)
+    
+    evidences = [
+        Evidence(
+            evidence_id="market_report",
+            ticker=ticker,
+            source="market_report",
+            evidence_type="market",
+            content=market_report,
+            stance=infer_stance_from_decision(market_decision),
+            relevance_score=0.85,
+        ),
+        Evidence(
+            evidence_id="fundamentals_report",
+            ticker=ticker,
+            source="fundamentals_report",
+            evidence_type="fundamental",
+            content=fundamentals_report,
+            stance=infer_stance_from_decision(fundamental_decision),
+            relevance_score=0.90,
+        ),
+        Evidence(
+            evidence_id="sentiment_report",
+            ticker=ticker,
+            source="sentiment_report",
+            evidence_type="sentiment",
+            content=sentiment_report,
+            stance=infer_stance_from_decision(sentiment_decision),
+            relevance_score=0.70,
+        ),
+        Evidence(
+            evidence_id="news_report",
+            ticker=ticker,
+            source="news_report",
+            evidence_type="news",
+            content=news_report,
+            stance=infer_stance_from_decision(news_decision),
+            relevance_score=0.75,
+        ),
+        Evidence(
+            evidence_id="final_trade_decision",
+            ticker=ticker,
+            source="final_trade_decision",
+            evidence_type="decision",
+            content=final_decision + "\n" + trader_plan + "\n" + investment_plan,
+            stance=infer_stance_from_decision(risk_decision),
+            relevance_score=0.95,
+        ),
+    ]
+
+    evidences = [score_evidence(e, evidences) for e in evidences]
+    evidences = detect_conflicts(evidences)
+
+    evidence_stance = {
+        e.evidence_id: e.stance
+        for e in evidences
+    }
+
+    evidence_weight = {
+        e.evidence_id: e.credibility_score
+        for e in evidences
+    }
+    
+    outputs = [
+        AgentOutput(
+            agent_name="Market Analyst",
+            role="market",
+            decision=market_decision,
+            confidence=market_conf,
+            evidence_ids=["market_report"],
+            suggested_position=infer_position_from_decision(market_decision, market_conf),
+            horizon="short",
+            reasoning_summary=market_report[:300],
+        ),
+        AgentOutput(
+            agent_name="Fundamentals Analyst",
+            role="fundamental",
+            decision=fundamental_decision,
+            confidence=fundamental_conf,
+            evidence_ids=["fundamentals_report"],
+            suggested_position=infer_position_from_decision(fundamental_decision, fundamental_conf),
+            horizon="mid",
+            reasoning_summary=fundamentals_report[:300],
+        ),
+        AgentOutput(
+            agent_name="Sentiment Analyst",
+            role="sentiment",
+            decision=sentiment_decision,
+            confidence=sentiment_conf,
+            evidence_ids=["sentiment_report"],
+            suggested_position=infer_position_from_decision(sentiment_decision, sentiment_conf),
+            horizon="short",
+            reasoning_summary=sentiment_report[:300],
+        ),
+        AgentOutput(
+            agent_name="News Analyst",
+            role="news",
+            decision=news_decision,
+            confidence=news_conf,
+            evidence_ids=["news_report"],
+            suggested_position=infer_position_from_decision(news_decision, news_conf),
+            horizon="short",
+            reasoning_summary=news_report[:300],
+        ),
+        AgentOutput(
+            agent_name="Risk Manager",
+            role="risk",
+            decision=risk_decision if risk_decision != "buy" else "hold",
+            confidence=risk_conf,
+            evidence_ids=["final_trade_decision"],
+            suggested_position=0.10 if risk_decision in ["sell", "hold"] else 0.25,
+            horizon="short",
+            reasoning_summary=(final_decision + "\n" + trader_plan)[:300],
+        ),
+    ]
+
+    disagreement = compute_disagreement(
+        outputs=outputs,
+        evidence_stance=evidence_stance,
+        evidence_weight=evidence_weight,
+    )
+
+    memory = ReviewMemory()
+    rho = memory.get_disagreement_penalty(disagreement.main_type)
+
+    decision = apply_adaptive_decision(
+        ticker=ticker,
+        outputs=outputs,
+        disagreement=disagreement,
+        rho=rho,
+    )
+
+    return {
+        "agent_outputs": [o.__dict__ for o in outputs],
+        "evidences": [
+            {
+                "evidence_id": e.evidence_id,
+                "source": e.source,
+                "evidence_type": e.evidence_type,
+                "stance": e.stance,
+                "credibility_score": e.credibility_score,
+                "conflict_ids": e.conflict_ids,
+            }
+            for e in evidences
+        ],
+        "evidence_stance": evidence_stance,
+        "evidence_weight": evidence_weight,
+        "disagreement": disagreement.__dict__,
+        "adaptive_decision": decision.__dict__,
+    }
+
+
+
+
+
 def main():
     args = parse_args()
 
@@ -437,10 +741,11 @@ def main():
             market = "us"
 
     # 检查 MiniMax API Key
-    api_key = os.environ.get("MINIMAX_API_KEY") or load_minimax_key_from_openclaw()
+    # 检查 DeepSeek API Key
+    api_key = os.environ.get("DEEPSEEK_API_KEY") or load_deepseek_key_from_openclaw()
     if not api_key:
-        print("❌ 错误: 未找到 MiniMax API Key")
-        print("请确保 ~/.openclaw/openclaw.json 中已配置 minimax provider")
+        print("错误: 未找到 DeepSeek API Key")
+        print("请先在环境变量 DEEPSEEK_API_KEY 或 C:\\Users\\31231\\.openclaw\\openclaw.json 的 models.providers.deepseek.apiKey 中配置")
         sys.exit(1)
 
     if not (TA_PROJECT / "tradingagents" / "graph" / "trading_graph.py").exists():
@@ -462,6 +767,15 @@ def main():
 
     # Step 2: 运行 TradingAgents 分析
     result = run_tradingagents(ticker, date, market, mx_text, timeout=args.timeout, max_retries=args.retries)
+
+    # Step 2.5: 不确定性诊断与风险自适应决策测试
+    uncertainty_result = run_uncertainty_layer(ticker, result)
+    result["uncertainty_analysis"] = uncertainty_result
+    memory = ReviewMemory()
+    memory.add_review(ticker, date, uncertainty_result)
+    print("\n========== 不确定性诊断测试 ==========", file=sys.stderr)
+    print(json.dumps(uncertainty_result, ensure_ascii=False, indent=2), file=sys.stderr)
+    print("=====================================\n", file=sys.stderr)
 
     # Step 3: 将妙想数据合并到结果中
     if mx_text:
