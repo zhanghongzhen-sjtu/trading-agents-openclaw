@@ -619,7 +619,23 @@ def run_uncertainty_layer(ticker: str, result: dict):
         ),
     ]
 
-    evidences = [score_evidence(e, evidences) for e in evidences]
+    memory = ReviewMemory()
+
+    scored_evidences = []
+    for e in evidences:
+        source_rel = memory.get_source_reliability(e.source)
+        type_rel = memory.get_type_reliability(e.evidence_type)
+        historical_reliability = 0.5 * source_rel + 0.5 * type_rel
+
+        scored_evidences.append(
+            score_evidence(
+                e,
+                evidences,
+                historical_reliability=historical_reliability,
+            )
+        )
+
+    evidences = scored_evidences
     evidences = detect_conflicts(evidences)
 
     evidence_stance = {
@@ -691,7 +707,7 @@ def run_uncertainty_layer(ticker: str, result: dict):
         evidence_weight=evidence_weight,
     )
 
-    memory = ReviewMemory()
+    
     rho = memory.get_disagreement_penalty(disagreement.main_type)
 
     decision = apply_adaptive_decision(
