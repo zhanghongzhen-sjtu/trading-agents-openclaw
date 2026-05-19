@@ -6,9 +6,14 @@
 用途：
 调用 run_analysis.py 的不同消融模式，模拟持仓收益，并输出对比结果。
 
-示例：
-python run_backtest.py --tickers 000630 --market cn --dates 2026-05-01 2026-05-08 2026-05-15
+支持两种收益来源：
+1. 手动指定持有期收益率：
+   python run_backtest.py --tickers 000630 --market cn --dates 2026-05-15 --holding-return -0.05 --allow-short
+
+2. 自动获取真实历史价格收益率：
+   python run_backtest.py --tickers 000630 --market cn --dates 2026-05-15 --holding-days 5 --allow-short
 """
+
 import os
 import argparse
 import csv
@@ -17,6 +22,8 @@ import subprocess
 import sys
 from pathlib import Path
 from statistics import mean, pstdev
+
+from validation.price_loader import get_holding_return_yfinance
 
 
 MODES = {
@@ -32,9 +39,10 @@ def parse_args():
     parser.add_argument("--tickers", nargs="+", required=True, help="股票代码列表，例如 000630 600519")
     parser.add_argument("--market", default="cn", choices=["cn", "us"], help="市场类型")
     parser.add_argument("--dates", nargs="+", required=True, help="回测日期列表，例如 2026-05-01 2026-05-08")
-    parser.add_argument("--holding-return", type=float, default=None, help="临时测试用：手动指定持有期收益率，例如 -0.05")
+    parser.add_argument("--holding-return", type=float, default=None, help="手动指定持有期收益率，例如 -0.05")
+    parser.add_argument("--holding-days", type=int, default=5, help="自动计算真实收益时的持有期交易日数量，默认5")
     parser.add_argument("--allow-short", action="store_true", help="允许卖出信号按做空收益计算")
-    parser.add_argument("--timeout", type=int, default=1200)
+    parser.add_argument("--timeout", type=int, default=1200, help="单次分析超时时间")
     return parser.parse_args()
 
 
@@ -49,12 +57,7 @@ def run_analysis(ticker: str, date: str, market: str, mode_name: str, mode_args:
         "--skip-mx",
         "--timeout", str(timeout),
         "--retries", "0",
-        "--disable-review-memory",
     ]
-
-    # 如果当前模式不是 wo-rmse，去掉默认 disable-review-memory
-    if mode_name != "wo-rmse":
-        cmd.remove("--disable-review-memory")
 
     cmd.extend(mode_args)
 
@@ -71,24 +74,46 @@ def run_analysis(ticker: str, date: str, market: str, mode_name: str, mode_args:
         encoding="utf-8",
         errors="replace",
         timeout=timeout + 60,
+        env=env,
     )
 
     if proc.returncode != 0:
-        print(proc.stderr[-1000:], file=sys.stderr)
+        print("\n========== run_analysis.py STDOUT ==========", file=sys.stderr)
+        print((proc.stdout or "")[-3000:], file=sys.stderr)
+
+        print("\n========== run_analysis.py STDERR ==========", file=sys.stderr)
+        print((proc.stderr or "")[-3000:], file=sys.stderr)
+
+        print("\n========== 调用命令 ==========", file=sys.stderr)
+        print(" ".join(cmd), file=sys.stderr)
+
         raise RuntimeError(f"run_analysis.py 执行失败: {ticker} {date} {mode_name}")
 
     text = proc.stdout.strip()
 
-    # stdout 可能有额外文本，尝试从最后一个 JSON 开始解析
     start = text.find("{")
     end = text.rfind("}")
+
     if start == -1 or end == -1:
+        print("\n========== run_analysis.py STDOUT ==========", file=sys.stderr)
+        print((proc.stdout or "")[-3000:], file=sys.stderr)
         raise RuntimeError("未找到 JSON 输出")
 
     return json.loads(text[start:end + 1])
 
 
 def calc_strategy_return(action: str, position: float, holding_return: float, allow_short: bool = False) -> float:
+    """
+    简化策略收益计算：
+
+    默认 A 股不做空：
+    buy  -> position * holding_return
+    hold -> 0
+    sell -> 0
+
+    如果开启 allow_short：
+    sell -> -position * holding_return
+    """
     action = (action or "").lower()
 
     if action == "buy":
@@ -168,15 +193,33 @@ def write_csv(path: Path, rows: list):
 def main():
     args = parse_args()
 
-    if args.holding_return is None:
-        print("当前最小版需要先用 --holding-return 手动指定持有期收益率。")
-        print("例如：python run_backtest.py --tickers 000630 --market cn --dates 2026-05-15 --holding-return -0.05")
-        return
-
     rows = []
 
     for ticker in args.tickers:
         for date in args.dates:
+
+            if args.holding_return is not None:
+                holding_return = args.holding_return
+                print(
+                    f"使用手动持有期收益: {ticker} | {date} | {holding_return:.2%}",
+                    file=sys.stderr
+                )
+            else:
+                holding_return = get_holding_return_yfinance(
+                    ticker=ticker,
+                    date=date,
+                    holding_days=args.holding_days,
+                )
+
+                if holding_return is None:
+                    print(f"⚠️ 无法获取 {ticker} {date} 的真实持有期收益，跳过", file=sys.stderr)
+                    continue
+
+                print(
+                    f"真实持有期收益: {ticker} | {date} | {args.holding_days}日 | {holding_return:.2%}",
+                    file=sys.stderr
+                )
+
             for mode_name, mode_args in MODES.items():
                 result = run_analysis(
                     ticker=ticker,
@@ -195,11 +238,11 @@ def main():
                 position = decision.get("final_position", 0.0)
 
                 strategy_return = calc_strategy_return(
-                action=action,
-                position=position,
-                holding_return=args.holding_return,
-                allow_short=args.allow_short,
-            )
+                    action=action,
+                    position=position,
+                    holding_return=holding_return,
+                    allow_short=args.allow_short,
+                )
 
                 rows.append({
                     "ticker": ticker,
@@ -207,7 +250,7 @@ def main():
                     "mode": mode_name,
                     "action": action,
                     "position": position,
-                    "holding_return": args.holding_return,
+                    "holding_return": holding_return,
                     "strategy_return": strategy_return,
                     "disagreement_total": disagreement.get("total", 0),
                     "evidence_disagreement": disagreement.get("evidence", 0),
