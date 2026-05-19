@@ -53,7 +53,7 @@ class FeishuDocClient:
 
     def _get_token(self) -> str:
         """获取 tenant_access_token，带缓存。"""
-        if self._token and time.time() < self._token_expire - 300:  # 提前5分钟刷新
+        if self._token and time.time() < self._token_expire - 300:
             return self._token
 
         resp = requests.post(
@@ -61,9 +61,19 @@ class FeishuDocClient:
             json={"app_id": self._app_id, "app_secret": self._app_secret},
             timeout=15,
         )
+
+        if resp.status_code >= 400:
+            print("\n[FEISHU DEBUG] get token HTTP failed")
+            print("[FEISHU DEBUG] status:", resp.status_code)
+            print("[FEISHU DEBUG] response:", resp.text[:3000])
+
         resp.raise_for_status()
         data = resp.json()
+
         if data.get("code") != 0:
+            print("\n[FEISHU DEBUG] get token API failed")
+            print("[FEISHU DEBUG] response:")
+            print(json.dumps(data, ensure_ascii=False, indent=2)[:3000])
             raise RuntimeError(f"Get token failed: {data}")
 
         self._token = data["tenant_access_token"]
@@ -92,9 +102,19 @@ class FeishuDocClient:
             json=payload,
             timeout=15,
         )
+
+        if resp.status_code >= 400:
+            print("\n[FEISHU DEBUG] create_document HTTP failed")
+            print("[FEISHU DEBUG] status:", resp.status_code)
+            print("[FEISHU DEBUG] response:", resp.text[:3000])
+
         resp.raise_for_status()
         data = resp.json()
+
         if data.get("code") != 0:
+            print("\n[FEISHU DEBUG] create_document API failed")
+            print("[FEISHU DEBUG] response:")
+            print(json.dumps(data, ensure_ascii=False, indent=2)[:3000])
             raise RuntimeError(f"Create document failed: {data}")
 
         doc_info = data["data"]["document"]
@@ -104,7 +124,13 @@ class FeishuDocClient:
             "title": doc_info.get("title", title),
         }
 
-    def append_blocks(self, document_id: str, blocks: List[Dict], parent_block_id: Optional[str] = None, index: int = -1) -> Dict[str, Any]:
+    def append_blocks(
+        self,
+        document_id: str,
+        blocks: List[Dict],
+        parent_block_id: Optional[str] = None,
+        index: int = -1,
+    ) -> Dict[str, Any]:
         """在文档中插入 blocks。
 
         Args:
@@ -126,10 +152,47 @@ class FeishuDocClient:
             json=payload,
             timeout=30,
         )
+
+        if resp.status_code >= 400:
+            print("\n[FEISHU DEBUG] append_blocks HTTP failed")
+            print("[FEISHU DEBUG] status:", resp.status_code)
+            print("[FEISHU DEBUG] url:", url)
+            print("[FEISHU DEBUG] document_id:", document_id)
+            print("[FEISHU DEBUG] parent_block_id:", block_id)
+            print("[FEISHU DEBUG] index:", index)
+            print("[FEISHU DEBUG] block_count:", len(blocks))
+            print("[FEISHU DEBUG] response text:")
+            print(resp.text[:5000])
+
+            print("\n[FEISHU DEBUG] first blocks preview:")
+            for i, block in enumerate(blocks[:5]):
+                try:
+                    print(f"[FEISHU DEBUG] block[{i}]:")
+                    print(json.dumps(block, ensure_ascii=False, indent=2)[:2500])
+                except Exception as e:
+                    print(f"[FEISHU DEBUG] block[{i}] dump failed: {e}")
+                    print(str(block)[:2500])
+
         resp.raise_for_status()
         data = resp.json()
+
         if data.get("code") != 0:
+            print("\n[FEISHU DEBUG] append_blocks API returned non-zero code")
+            print("[FEISHU DEBUG] data:")
+            print(json.dumps(data, ensure_ascii=False, indent=2)[:5000])
+            print("[FEISHU DEBUG] block_count:", len(blocks))
+
+            print("\n[FEISHU DEBUG] first blocks preview:")
+            for i, block in enumerate(blocks[:5]):
+                try:
+                    print(f"[FEISHU DEBUG] block[{i}]:")
+                    print(json.dumps(block, ensure_ascii=False, indent=2)[:2500])
+                except Exception as e:
+                    print(f"[FEISHU DEBUG] block[{i}] dump failed: {e}")
+                    print(str(block)[:2500])
+
             raise RuntimeError(f"Append blocks failed: {data}")
+
         return data["data"]
 
     def update_block(self, document_id: str, block_id: str, block_data: Dict) -> Dict[str, Any]:
@@ -142,28 +205,57 @@ class FeishuDocClient:
             json=block_data,
             timeout=15,
         )
+
+        if resp.status_code >= 400:
+            print("\n[FEISHU DEBUG] update_block HTTP failed")
+            print("[FEISHU DEBUG] status:", resp.status_code)
+            print("[FEISHU DEBUG] url:", url)
+            print("[FEISHU DEBUG] response:", resp.text[:3000])
+
         resp.raise_for_status()
         data = resp.json()
+
         if data.get("code") != 0:
+            print("\n[FEISHU DEBUG] update_block API failed")
+            print("[FEISHU DEBUG] data:")
+            print(json.dumps(data, ensure_ascii=False, indent=2)[:3000])
             raise RuntimeError(f"Update block failed: {data}")
+
         return data["data"]
 
-    def list_blocks(self, document_id: str, parent_block_id: Optional[str] = None, page_size: int = 500) -> List[Dict]:
+    def list_blocks(
+        self,
+        document_id: str,
+        parent_block_id: Optional[str] = None,
+        page_size: int = 500,
+    ) -> List[Dict]:
         """列出文档中的所有 blocks。"""
         block_id = parent_block_id or document_id
         url = FEISHU_LIST_BLOCKS_URL.format(doc_id=document_id, block_id=block_id)
 
         all_items = []
         page_token = ""
+
         while True:
             params = {"page_size": page_size}
             if page_token:
                 params["page_token"] = page_token
 
             resp = requests.get(url, headers=self._headers(), params=params, timeout=15)
+
+            if resp.status_code >= 400:
+                print("\n[FEISHU DEBUG] list_blocks HTTP failed")
+                print("[FEISHU DEBUG] status:", resp.status_code)
+                print("[FEISHU DEBUG] url:", url)
+                print("[FEISHU DEBUG] response:", resp.text[:3000])
+
             resp.raise_for_status()
             data = resp.json()
+
             if data.get("code") != 0:
+                print("\n[FEISHU DEBUG] list_blocks API failed")
+                print("[FEISHU DEBUG] data:")
+                print(json.dumps(data, ensure_ascii=False, indent=2)[:3000])
                 raise RuntimeError(f"List blocks failed: {data}")
 
             items = data["data"].get("items", [])
@@ -171,6 +263,7 @@ class FeishuDocClient:
 
             if not data["data"].get("has_more"):
                 break
+
             page_token = data["data"].get("page_token", "")
 
         return all_items
@@ -180,20 +273,44 @@ class FeishuDocClient:
         url = FEISHU_UPDATE_BLOCK_URL.format(doc_id=document_id, block_id=block_id)
 
         resp = requests.delete(url, headers=self._headers(), timeout=15)
+
+        if resp.status_code >= 400:
+            print("\n[FEISHU DEBUG] delete_block HTTP failed")
+            print("[FEISHU DEBUG] status:", resp.status_code)
+            print("[FEISHU DEBUG] url:", url)
+            print("[FEISHU DEBUG] response:", resp.text[:3000])
+
         resp.raise_for_status()
         data = resp.json()
+
         if data.get("code") != 0:
+            print("\n[FEISHU DEBUG] delete_block API failed")
+            print("[FEISHU DEBUG] data:")
+            print(json.dumps(data, ensure_ascii=False, indent=2)[:3000])
             raise RuntimeError(f"Delete block failed: {data}")
+
         return data.get("data", {})
 
     def get_doc_info(self, document_id: str) -> Dict[str, Any]:
         """获取文档基本信息。"""
         url = FEISHU_DOC_INFO_URL.format(doc_id=document_id)
         resp = requests.get(url, headers=self._headers(), timeout=15)
+
+        if resp.status_code >= 400:
+            print("\n[FEISHU DEBUG] get_doc_info HTTP failed")
+            print("[FEISHU DEBUG] status:", resp.status_code)
+            print("[FEISHU DEBUG] url:", url)
+            print("[FEISHU DEBUG] response:", resp.text[:3000])
+
         resp.raise_for_status()
         data = resp.json()
+
         if data.get("code") != 0:
+            print("\n[FEISHU DEBUG] get_doc_info API failed")
+            print("[FEISHU DEBUG] data:")
+            print(json.dumps(data, ensure_ascii=False, indent=2)[:3000])
             raise RuntimeError(f"Get doc info failed: {data}")
+
         return data["data"]["document"]
 
 
@@ -209,7 +326,7 @@ def text_block(content: str, bold: bool = False, italic: bool = False, color: in
     if italic:
         style["italic"] = True
     if color:
-        style["text_color"] = color  # 飞书颜色索引
+        style["text_color"] = color
 
     element = {"text_run": {"content": content}}
     if style:
@@ -243,8 +360,6 @@ def heading3_block(content: str) -> Dict:
 
 
 def divider_block() -> Dict:
-    # block_type 17 (divider) not supported by bot's doc permission
-    # Use a text block with line of dashes as visual divider
     return {
         "block_type": 2,
         "text": {"elements": [{"text_run": {"content": "─────────────────────────────────"}}]},
@@ -252,8 +367,6 @@ def divider_block() -> Dict:
 
 
 def bullet_block(content: str) -> Dict:
-    # block_type 19 (bulleted_list) may not be supported by bot's permission
-    # Use text block with bullet prefix instead
     return {
         "block_type": 2,
         "text": {"elements": [{"text_run": {"content": f"• {content}"}}]},
@@ -268,19 +381,22 @@ def ordered_block(content: str) -> Dict:
 
 
 def quote_block(content: str) -> Dict:
-    # block_type 16 (quote) is not supported by the bot's doc permission
-    # Use block_type 2 (text) with italic style as alternative
     return {
         "block_type": 2,
         "text": {
-            "elements": [{"text_run": {"content": f"「 {content} 」", "text_element_style": {"italic": True}}}],
+            "elements": [
+                {
+                    "text_run": {
+                        "content": f"「 {content} 」",
+                        "text_element_style": {"italic": True},
+                    }
+                }
+            ],
             "style": {"align": 1},
         },
     }
 
 
-# 飞书颜色索引（部分常用色）
-# 参考：https://open.feishu.cn/document/server-docs/docs/docx-v1/document-block/text
 FEISHU_COLORS = {
     "default": 0,
     "gray": 1,

@@ -1,0 +1,730 @@
+% !TeX program = xelatex
+
+\documentclass[14pt,a4paper]{extarticle}
+
+% =========================
+% Page and font settings
+% =========================
+\usepackage{geometry}
+\geometry{
+  a4paper,
+  top=2cm,
+  bottom=2cm,
+  left=3cm,
+  right=1cm
+}
+
+\usepackage{fontspec}
+\IfFontExistsTF{Times New Roman}
+  {\setmainfont{Times New Roman}}
+  {\setmainfont{TeX Gyre Termes}}
+
+\usepackage{setspace}
+\onehalfspacing
+
+\usepackage{indentfirst}
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0pt}
+
+\usepackage{ragged2e}
+\AtBeginDocument{\justifying}
+
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\graphicspath{{./}{../}}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{tocloft}
+\usepackage{titlesec}
+\usepackage{float}
+\usepackage{longtable}
+\usepackage[hidelinks]{hyperref}
+
+\pagestyle{plain}
+\sloppy
+
+% =========================
+% Section title format
+% =========================
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+
+\titleformat{\section}
+  {\normalfont\normalsize}
+  {\thesection}
+  {0.5em}
+  {}
+
+\titleformat{\subsection}
+  {\normalfont\normalsize}
+  {\thesubsection}
+  {0.5em}
+  {}
+
+\titleformat{\subsubsection}
+  {\normalfont\normalsize}
+  {\thesubsubsection}
+  {0.5em}
+  {}
+
+\titlespacing*{\section}
+  {1.25cm}
+  {1.5\baselineskip}
+  {0.5\baselineskip}
+
+\titlespacing*{\subsection}
+  {1.25cm}
+  {1.0\baselineskip}
+  {0.5\baselineskip}
+
+\titlespacing*{\subsubsection}
+  {1.25cm}
+  {1.0\baselineskip}
+  {0.5\baselineskip}
+
+% =========================
+% Major headings
+% =========================
+\newcommand{\MajorHeadingNoToc}[1]{%
+  \clearpage
+  \phantomsection
+  \begin{center}
+    \normalfont\normalsize #1
+  \end{center}
+  \vspace{1.5\baselineskip}
+}
+
+\newcommand{\MajorHeadingToc}[1]{%
+  \clearpage
+  \phantomsection
+  \addcontentsline{toc}{section}{#1}
+  \begin{center}
+    \normalfont\normalsize #1
+  \end{center}
+  \vspace{1.5\baselineskip}
+}
+
+% =========================
+% Table of contents format
+% =========================
+\renewcommand{\cftsecfont}{\normalfont\normalsize}
+\renewcommand{\cftsecpagefont}{\normalfont\normalsize}
+\renewcommand{\cftsubsecfont}{\normalfont\normalsize}
+\renewcommand{\cftsubsecpagefont}{\normalfont\normalsize}
+\renewcommand{\cftsubsubsecfont}{\normalfont\normalsize}
+\renewcommand{\cftsubsubsecpagefont}{\normalfont\normalsize}
+
+\setlength{\cftbeforesecskip}{0pt}
+\setlength{\cftbeforesubsecskip}{0pt}
+\setlength{\cftbeforesubsubsecskip}{0pt}
+
+\setlength{\cftsecindent}{0cm}
+\setlength{\cftsubsecindent}{1.25cm}
+\setlength{\cftsubsubsecindent}{2.5cm}
+
+\setlength{\cftsecnumwidth}{1.2cm}
+\setlength{\cftsubsecnumwidth}{1.5cm}
+\setlength{\cftsubsubsecnumwidth}{2cm}
+
+\renewcommand{\cftdotsep}{1}
+
+\makeatletter
+\newcommand{\ManualTableOfContents}{%
+  \clearpage
+  \phantomsection
+  \begin{center}
+    \normalfont\normalsize CONTENTS
+  \end{center}
+  \vspace{1.5\baselineskip}
+  \begingroup
+    \setlength{\parindent}{0pt}
+    \@starttoc{toc}
+  \endgroup
+}
+\makeatother
+
+% =========================
+% Figure and table captions
+% =========================
+\DeclareCaptionLabelSeparator{samaraendash}{~\textendash~}
+
+\captionsetup{
+  font=normalsize,
+  labelfont=normalfont,
+  textfont=normalfont
+}
+
+\captionsetup[figure]{
+  name=Figure,
+  labelsep=samaraendash,
+  justification=centering,
+  singlelinecheck=true
+}
+
+\captionsetup[table]{
+  name=Table,
+  labelsep=samaraendash,
+  justification=raggedright,
+  singlelinecheck=false
+}
+
+% =========================
+% List format
+% =========================
+\setlist{
+  topsep=0pt,
+  partopsep=0pt,
+  itemsep=0pt,
+  parsep=0pt
+}
+
+\setlist[itemize]{
+  label=-,
+  leftmargin=1.25cm
+}
+
+\setlist[enumerate]{
+  leftmargin=1.25cm
+}
+
+% =========================
+% Appendix numbering
+% =========================
+\newcommand{\StartAppendixA}{%
+  \clearpage
+  \appendix
+  \setcounter{figure}{0}
+  \setcounter{table}{0}
+  \setcounter{equation}{0}
+  \renewcommand{\thefigure}{A.\arabic{figure}}
+  \renewcommand{\thetable}{A.\arabic{table}}
+  \renewcommand{\theequation}{A.\arabic{equation}}
+}
+
+% =========================
+% Document starts here
+% =========================
+\begin{document}
+
+% =========================================================
+% ABSTRACT
+% =========================================================
+\MajorHeadingNoToc{ABSTRACT}
+
+Master thesis: XX p, 9 figures, 2 tables, 25 sources, 1 appendix.
+
+MULTI-UAV SYSTEM, REINFORCEMENT LEARNING, COOPERATIVE SEARCH, TARGET TRACKING, MARL, CTDE, GRAPH COMMUNICATION, PATH PLANNING, OBSTACLE AVOIDANCE, SAFETY CONSTRAINT
+
+This thesis studies reinforcement-learning-based cooperative search and target tracking for multi-UAV systems. A belief-state-driven, graph-enhanced and hierarchical multi-agent reinforcement learning framework is proposed to support cooperative search, continuous tracking and obstacle avoidance under partial observation, limited communication and safety constraints. MATLAB simulation results show that the tracking target is not lost, the average tracking error is 0.899 m, and the proposed RL-based strategy achieves 100\% target arrival rate with an average path length of 55.1040 m.
+
+% =========================================================
+% CONTENTS
+% =========================================================
+\ManualTableOfContents
+
+% =========================================================
+% INTRODUCTION
+% =========================================================
+\MajorHeadingToc{INTRODUCTION}
+
+With the rapid development of sensing, embedded flight control and autonomous navigation technologies, unmanned aerial vehicles (UAVs) have been widely applied in disaster rescue, border patrol, maritime search and rescue, environmental monitoring and urban security. Among these applications, cooperative search and target tracking are two typical high-value mission modes. Cooperative search aims to quickly discover unknown or uncertain targets in a mission region, while target tracking aims to continuously estimate and follow the state of a moving target under observation noise, occlusion and dynamic environmental changes.
+
+Compared with a single UAV, a multi-UAV system can improve spatial coverage, sensing redundancy and mission robustness through distributed observation and cooperative decision-making. However, the improvement in capability is accompanied by several technical challenges. First, each UAV can only obtain local observations, and the global target state is often partially observable. Second, both the target and environment may change dynamically, producing uncertainty, false detections and missed detections. Third, the actions of different UAVs are strongly coupled, because the system must avoid collision, reduce repeated search, maintain useful observation geometry and satisfy flight constraints. Fourth, the decision process must be real-time and scalable when the number of UAVs and targets increases.
+
+Traditional approaches, such as coverage control, information-driven planning, Kalman filtering, particle filtering and multi-target tracking methods, have achieved good results in structured scenarios. Nevertheless, these methods often rely on precise models or strong assumptions, and their online computational cost may become high in large-scale dynamic environments. When the search and tracking tasks are tightly coupled, rule-based strategies may also become short-sighted and difficult to generalize.
+
+Reinforcement learning provides a data-driven approach for sequential decision-making. Deep reinforcement learning further enables high-dimensional state representation and nonlinear policy approximation. In multi-UAV cooperative search and target tracking, multi-agent reinforcement learning can optimize the mission-level reward directly, including target discovery probability, tracking accuracy, path efficiency, energy consumption and safety cost. In particular, the centralized training with decentralized execution paradigm makes it possible to use global information during training while allowing each UAV to execute its policy using local information.
+
+The aim of this thesis is to study a reinforcement-learning-based multi-UAV cooperative search and target tracking method under partial observation, limited communication and safety constraints. The main research idea is to build an estimation-decision closed loop based on belief state representation, graph communication and hierarchical reinforcement learning. The proposed method integrates cooperative search, continuous tracking and obstacle avoidance into a unified framework, so that UAVs can coordinate their motion in complex environments.
+
+The main contributions of this thesis are as follows:
+
+\begin{enumerate}[label=\arabic*)]
+  \item A unified problem formulation for multi-UAV cooperative search and target tracking is established.
+
+  \item A reinforcement-learning-based cooperative decision-making framework is designed for UAV search, tracking and path planning.
+
+  \item MATLAB simulations are carried out to evaluate search coverage, target discovery rate, tracking error, reward convergence, path length, target arrival rate and three-dimensional obstacle avoidance.
+
+  \item The simulation results are analyzed to verify the feasibility and limitations of the proposed framework.
+\end{enumerate}
+
+% =========================================================
+% MAIN BODY
+% =========================================================
+\clearpage
+
+\section{Problem analysis and theoretical basis}
+
+\subsection{Multi-UAV cooperative search and target tracking}
+
+Multi-UAV cooperative search refers to the process in which several UAVs explore a mission region and attempt to discover targets whose locations are unknown or uncertain. The mission objective is usually to maximize target discovery probability, information gain or search coverage within limited time and energy. Typical performance indicators include coverage rate, average discovery time, missed detection rate and entropy reduction.
+
+Target tracking refers to continuous estimation and following of target states after detection. In real-world applications, the target may maneuver, disappear temporarily, be blocked by obstacles or reappear in another region. Therefore, the UAV team must maintain the tracking chain and perform reacquisition after target loss. Typical performance indicators include tracking error, tracking continuity, reacquisition time and target arrival or capture success rate.
+
+In practical missions, cooperative search and target tracking are not isolated. Search should consider whether the discovered target can be continuously tracked in the future. Tracking should also consider re-search when the target is lost. Therefore, search and tracking should be modeled as a unified decision process rather than two independent stages.
+
+\subsection{Partially observable decision model}
+
+Let the UAV set be
+\[
+\mathcal{U}=\{1,2,\ldots,N\},
+\]
+where $N$ is the number of UAVs. At time step $t$, UAV $i$ has state
+\[
+s_i^t=[p_i^t,v_i^t,e_i^t],
+\]
+where $p_i^t$ is the position, $v_i^t$ is the velocity and $e_i^t$ is the remaining energy. The target state is denoted as
+\[
+x^t=[p_x^t,v_x^t],
+\]
+where $p_x^t$ and $v_x^t$ are the target position and velocity.
+
+Because each UAV only observes a local region, the complete state cannot be directly obtained. The local observation of UAV $i$ is written as
+\[
+o_i^t=O_i(s^t,x^t,n_i^t),
+\]
+where $O_i(\cdot)$ is the observation function and $n_i^t$ denotes sensor noise.
+
+Under partial observation, a belief state is introduced to describe the probability distribution of the target state:
+\begin{equation}
+  b^t(x)=P(x^t=x|o^{1:t},a^{1:t-1}).
+\end{equation}
+
+The objective of the UAV team is to learn a joint policy
+\[
+\pi=\{\pi_1,\pi_2,\ldots,\pi_N\},
+\]
+where each UAV selects action $a_i^t$ according to local information:
+\[
+a_i^t \sim \pi_i(a_i^t|\tau_i^t).
+\]
+
+The optimization objective is to maximize the expected discounted return:
+\begin{equation}
+  J(\pi)=\mathbb{E}_{\pi}\left[\sum_{t=0}^{T}\gamma^t r^t\right],
+\end{equation}
+where $\gamma$ is the discount factor and $r^t$ is the team reward.
+
+\subsection{Reinforcement learning and multi-agent learning}
+
+Reinforcement learning studies how an agent learns an optimal policy through interaction with the environment. In a Markov decision process, the agent observes state $s_t$, selects action $a_t$, receives reward $r_t$ and transfers to the next state $s_{t+1}$. The discounted return from time $t$ is
+\begin{equation}
+  G_t=\sum_{k=0}^{\infty}\gamma^k r_{t+k+1}.
+\end{equation}
+
+The state-value function and action-value function are defined as
+\begin{equation}
+  V^{\pi}(s)=\mathbb{E}_{\pi}[G_t|s_t=s],
+\end{equation}
+\begin{equation}
+  Q^{\pi}(s,a)=\mathbb{E}_{\pi}[G_t|s_t=s,a_t=a].
+\end{equation}
+
+For multi-UAV systems, each UAV is an agent. The learning process faces non-stationarity because the policy of one UAV changes the environment observed by other UAVs. The centralized training with decentralized execution paradigm is adopted to reduce this difficulty. During training, global state and joint action information are used to train a centralized critic. During execution, each UAV uses only local observation and received messages to select actions.
+
+\section{Reinforcement-learning-based cooperative method}
+
+\subsection{Overall framework}
+
+The proposed method consists of four main modules: belief state estimation, cooperative communication, reinforcement learning decision-making and safety projection. The belief state estimation module transforms noisy and incomplete observations into a compact uncertainty representation. The communication module aggregates neighbor information under dynamic topology. The reinforcement learning module learns cooperative policies for search, tracking and path planning. The safety projection module modifies unsafe actions before execution.
+
+At each time step, every UAV obtains local observation from onboard sensors. Then the belief state of potential target locations is updated. Neighbor messages are exchanged and fused. The policy outputs a motion action, and the safety module checks collision, obstacle and dynamic constraints before execution.
+
+\subsection{Belief state construction}
+
+For cooperative search, the mission region is divided into grid cells:
+\[
+\mathcal{G}=\{g_1,g_2,\ldots,g_M\}.
+\]
+Each grid cell has a probability value representing the likelihood that the target exists in the cell:
+\[
+b^t=[P(g_1),P(g_2),\ldots,P(g_M)].
+\]
+
+When a UAV observes a cell and does not detect the target, the probability of that cell decreases according to the detection model. When a possible target signal is detected, the probability of the corresponding cell increases. The belief map enables UAVs to reduce repeated search and focus on high-uncertainty regions.
+
+For target tracking, the belief state can be represented by the estimated target mean and covariance:
+\[
+\hat{x}^t=[\hat{p}_x^t,\hat{v}_x^t],
+\]
+\[
+\Sigma^t=\mathbb{E}[(x^t-\hat{x}^t)(x^t-\hat{x}^t)^T].
+\]
+
+A smaller covariance means that the target state is estimated more accurately. Therefore, the tracking policy should not only reduce the distance to the target, but also maintain good observation geometry to reduce uncertainty.
+
+\subsection{Graph communication under dynamic topology}
+
+The multi-UAV system can be modeled as a dynamic graph
+\[
+\mathcal{G}^t=(\mathcal{V},\mathcal{E}^t),
+\]
+where each node represents a UAV and each edge represents a communication link. An edge between UAV $i$ and UAV $j$ exists when their communication distance is smaller than a threshold:
+\[
+(i,j)\in \mathcal{E}^t \quad \text{if} \quad \|p_i^t-p_j^t\|\leq R_c.
+\]
+
+Each UAV encodes its local feature as
+\[
+h_i^t=f_{\theta}(o_i^t,b_i^t),
+\]
+where $f_{\theta}$ is a neural network encoder. A graph attention mechanism is used to compute the importance of neighbor information:
+\begin{equation}
+  \alpha_{ij}^t=
+  \frac{\exp(\text{LeakyReLU}(w^T[h_i^t,h_j^t]))}
+  {\sum_{k\in \mathcal{N}_i^t}\exp(\text{LeakyReLU}(w^T[h_i^t,h_k^t]))}.
+\end{equation}
+
+The aggregated representation of UAV $i$ is
+\begin{equation}
+  \bar{h}_i^t=\sigma\left(\sum_{j\in \mathcal{N}_i^t}\alpha_{ij}^t W h_j^t\right),
+\end{equation}
+where $\mathcal{N}_i^t$ is the neighbor set of UAV $i$, $W$ is a trainable matrix and $\sigma(\cdot)$ is a nonlinear activation function.
+
+\subsection{Hierarchical search-tracking policy}
+
+The proposed policy has two levels. The high-level policy performs role scheduling and target assignment. The low-level policy performs continuous motion control.
+
+The high-level action is defined as
+\[
+a_{i,H}^t \in \{\text{search},\text{track},\text{reacquire},\text{relay}\}.
+\]
+The search role explores uncertain regions. The track role keeps the target within the sensor field of view. The reacquire role searches around the predicted target location after temporary loss. The relay role improves communication connectivity or observation geometry.
+
+The low-level action is continuous:
+\[
+a_{i,L}^t=[\Delta v_i^t,\Delta \psi_i^t,\Delta z_i^t],
+\]
+where $\Delta v_i^t$ is velocity adjustment, $\Delta \psi_i^t$ is heading adjustment and $\Delta z_i^t$ is altitude adjustment.
+
+The hierarchical policy is written as
+\[
+\pi_i(a_i^t|\tau_i^t)=\pi_{i,H}(a_{i,H}^t|\tau_i^t)\pi_{i,L}(a_{i,L}^t|\tau_i^t,a_{i,H}^t).
+\]
+
+This hierarchical design reduces the difficulty of learning. Instead of learning all search, tracking and control behaviors in a single flat policy, the agent first decides the mission role and then generates the corresponding motion action.
+
+\subsection{Reward function design}
+
+The reward function is designed to reflect search efficiency, tracking quality, cooperation and safety:
+\begin{equation}
+  r^t=w_s r_s^t+w_t r_t^t+w_c r_c^t-w_e r_e^t-w_o r_o^t-w_d r_d^t,
+\end{equation}
+where $r_s^t$ is the search reward, $r_t^t$ is the tracking reward, $r_c^t$ is the cooperation reward, $r_e^t$ is the energy cost, $r_o^t$ is the obstacle penalty and $r_d^t$ is the repeated search penalty.
+
+The search reward is defined by the decrease of uncertainty:
+\begin{equation}
+  r_s^t=H(b^{t-1})-H(b^t),
+\end{equation}
+where $H(\cdot)$ is the entropy of the belief map.
+
+The tracking reward is related to target estimation error:
+\begin{equation}
+  r_t^t=-\|\hat{p}_x^t-p_x^t\|_2-\lambda_{\Sigma}\text{Tr}(\Sigma^t).
+\end{equation}
+
+The collision and obstacle penalty is
+\begin{equation}
+  r_o^t=
+  \begin{cases}
+  C_{col}, & \text{collision or obstacle violation occurs},\\
+  0, & \text{otherwise}.
+  \end{cases}
+\end{equation}
+
+\subsection{Safety projection}
+
+In practical deployment, the learned policy may generate unsafe actions. Therefore, a safety projection layer is introduced. Given the original action $a_i^t$, the safe action $\tilde{a}_i^t$ is obtained by solving
+\begin{equation}
+  \tilde{a}_i^t=
+  \arg\min_a \|a-a_i^t\|_2^2,
+\end{equation}
+subject to
+\begin{equation}
+  \|p_i^{t+1}-p_j^{t+1}\|_2 \geq d_{min}, \quad \forall j\neq i,
+\end{equation}
+\begin{equation}
+  p_i^{t+1}\notin \mathcal{O},
+\end{equation}
+\begin{equation}
+  \|v_i^{t+1}\|_2 \leq v_{max}.
+\end{equation}
+
+This layer separates learning performance from hard safety constraints. The policy learns efficient behavior, while the projection layer ensures that executed actions remain feasible.
+
+% =========================================================
+% CONCLUSION
+% =========================================================
+\MajorHeadingToc{CONCLUSION}
+
+% Make subsections under CONCLUSION numbered as 3.1, 3.2, 3.3
+\refstepcounter{section}
+\setcounter{subsection}{0}
+
+\subsection{Experimental design}
+
+To verify the feasibility and effectiveness of the reinforcement-learning-based multi-UAV cooperative search and target tracking method, MATLAB simulation experiments were carried out. The simulation includes five parts: cooperative search, dynamic target tracking, reinforcement learning training, algorithm comparison and three-dimensional obstacle avoidance.
+
+The simulation environment is a bounded two-dimensional or three-dimensional mission area. Multiple UAVs are initialized at different positions and are required to search for unknown targets, track a moving target, avoid obstacles and reach target positions. The main evaluation indicators include search coverage rate, target discovery rate, tracking error, reward convergence, path length, target arrival rate and obstacle avoidance performance.
+
+The main simulation results are summarized in table 1.
+
+\begin{longtable}{|>{\raggedright\arraybackslash}p{5.0cm}
+                  |>{\centering\arraybackslash}p{4.0cm}
+                  |>{\raggedright\arraybackslash}p{5.0cm}|}
+  \caption{Summary of main simulation results}
+  \label{tab:main-simulation-results}\\
+  \hline
+  Indicator & Result & Meaning \\
+  \hline
+  \endfirsthead
+
+  \hline
+  Indicator & Result & Meaning \\
+  \hline
+  \endhead
+
+  \hline
+  \endfoot
+
+  Final search coverage rate & about 9\% & The UAVs can explore the region, but the global coverage ability still needs improvement \\
+  \hline
+  Target discovery rate & 25\% & One of four targets is successfully discovered in the current search simulation \\
+  \hline
+  Target lost times & 0 & The target is continuously tracked during the simulation \\
+  \hline
+  Average tracking error & 0.899 m & The tracking estimation remains accurate and stable \\
+  \hline
+  Reward convergence & from about -2000 to about -200 & The reinforcement learning agent gradually improves its policy \\
+  \hline
+  Proposed RL target arrival rate & 100\% & The proposed strategy can successfully reach the target in the comparison experiment \\
+  \hline
+  Proposed RL average path length & 55.1040 m & The path length is much shorter than random motion and close to other guided methods \\
+  \hline
+  Proposed RL average steps & 17.22 & The proposed strategy has the smallest average number of steps among successful methods \\
+  \hline
+\end{longtable}
+
+\subsection{Result analysis}
+
+Figure 1 shows the cooperative search trajectories of five UAVs in a two-dimensional mission area. The red stars represent target positions, and the colored curves represent UAV trajectories. It can be seen that the UAVs perform parallel search in different local regions. This verifies that the multi-UAV system has the basic ability to conduct distributed cooperative search.
+
+However, the search trajectories are mainly concentrated in several local areas. Some targets are located far away from the main search trajectories, especially Target 1, Target 2 and Target 4. Therefore, only part of the mission area is effectively covered. This result indicates that the current cooperative search strategy can realize basic multi-UAV exploration, but it still needs stronger global exploration and task allocation mechanisms.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.90\textwidth]{figures/Figure_1_Cooperative_Search_Trajectory.png}
+  \caption{Multi-UAV cooperative search trajectory}
+  \label{fig:cooperative-search-trajectory}
+\end{figure}
+
+Figure 2 shows the search coverage rate and target discovery rate. The coverage rate increases gradually with time, which means that the UAV team continuously expands the explored area. The final coverage rate is about 9\%. The target discovery rate remains at 25\%, indicating that one of four targets is detected during the simulation.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.90\textwidth]{figures/Figure_2_Search_Performance.png}
+  \caption{Search coverage and target discovery rate}
+  \label{fig:search-performance}
+\end{figure}
+
+Figure 3 shows the dynamic target tracking result. The black curve represents the true target trajectory, the red dashed curve represents the estimated target trajectory, and the colored curves represent UAV trajectories. It can be seen that the estimated trajectory follows the true target trajectory closely during most of the simulation process.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.90\textwidth]{figures/Figure_3_Target_Tracking_Trajectory.png}
+  \caption{Dynamic target tracking trajectory}
+  \label{fig:target-tracking-trajectory}
+\end{figure}
+
+Figure 4 shows the target tracking error curve. The tracking error mainly remains between 0.5 m and 1.5 m. The average tracking error is 0.899 m. The tracking error does not diverge, which indicates that the estimation-based cooperative tracking method has good stability and robustness.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.90\textwidth]{figures/Figure_4_Tracking_Error_Curve.png}
+  \caption{Target tracking error curve}
+  \label{fig:tracking-error}
+\end{figure}
+
+Figure 5 shows the reward convergence curve of the reinforcement learning training process. The moving average reward shows an obvious upward trend, increasing from about -2000 to about -200.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.90\textwidth]{figures/Figure_5_RL_Reward_Convergence.png}
+  \caption{Reinforcement learning reward convergence curve}
+  \label{fig:reward-convergence}
+\end{figure}
+
+Figure 6 shows the Q-learning path planning result in a grid environment with obstacles. It can be observed that the Q-learning path does not successfully reach the goal in this dense obstacle environment. This result shows that tabular Q-learning has limitations when the obstacle distribution is complex and the state space becomes large.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.90\textwidth]{figures/Figure_6_RL_Path_Planning.png}
+  \caption{Q-learning path planning result}
+  \label{fig:q-learning-path}
+\end{figure}
+
+Figure 7 shows the comparison of average path length among different algorithms. The Random method has the longest average path length, which is 257.3001 m. Greedy, Q-learning and Proposed RL significantly reduce the path length. Their average path lengths are 49.5040 m, 57.1300 m and 55.1040 m, respectively.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.90\textwidth]{figures/Figure_7_Path_Length_Comparison.png}
+  \caption{Comparison of path length among different algorithms}
+  \label{fig:path-length-comparison}
+\end{figure}
+
+Figure 8 shows the comparison of target arrival rate. The target arrival rate of the Random method is only 10\%. In contrast, Greedy, Q-learning and Proposed RL all achieve 100\% target arrival rate.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.90\textwidth]{figures/Figure_8_Target_Arrival_Rate_Comparison.png}
+  \caption{Comparison of target arrival rate among different algorithms}
+  \label{fig:arrival-rate-comparison}
+\end{figure}
+
+The numerical comparison is shown in table 2.
+
+\begin{table}[H]
+  \caption{Comparison of different algorithms}
+  \label{tab:algorithm-comparison}
+  \centering
+  \begin{tabular}{|>{\raggedright\arraybackslash}p{3.5cm}
+                  |>{\centering\arraybackslash}p{3.5cm}
+                  |>{\centering\arraybackslash}p{3.5cm}
+                  |>{\centering\arraybackslash}p{3.0cm}|}
+    \hline
+    Algorithm & Average path length / m & Target arrival rate & Average steps \\
+    \hline
+    Random & 257.3001 & 10\% & 112.82 \\
+    \hline
+    Greedy & 49.5040 & 100\% & 19.04 \\
+    \hline
+    Q-learning & 57.1300 & 100\% & 19.70 \\
+    \hline
+    Proposed RL & 55.1040 & 100\% & 17.22 \\
+    \hline
+  \end{tabular}
+\end{table}
+
+Figure 9 shows the three-dimensional obstacle avoidance trajectories of multiple UAVs. The UAVs move from the initial positions to the target positions while avoiding obstacles in three-dimensional space.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.90\textwidth]{figures/Figure_9_3D_Obstacle_Avoidance.png}
+  \caption{Three-dimensional obstacle avoidance trajectory}
+  \label{fig:3d-obstacle-avoidance}
+\end{figure}
+
+\subsection{General conclusion}
+
+This thesis studies the problem of multi-UAV cooperative search and target tracking based on reinforcement learning. A cooperative decision-making framework is constructed for target search, target tracking, path planning and obstacle avoidance. The method combines belief-state representation, reinforcement learning decision-making and safety-aware motion planning, aiming to improve the autonomy, cooperation and adaptability of multi-UAV systems in dynamic environments.
+
+The main conclusions obtained from the simulation results are as follows.
+
+\begin{enumerate}[label=\arabic*)]
+  \item In the cooperative search simulation, five UAVs are able to conduct parallel exploration in the mission area. However, the final coverage rate is only about 9\%, and the target discovery rate is 25\%. This indicates that the current search strategy has basic exploration capability, but its global coverage ability and target discovery efficiency still need to be improved.
+
+  \item In the dynamic target tracking simulation, the estimated target trajectory follows the true target trajectory closely. The target is not lost during the simulation, and the average tracking error is 0.899 m. This demonstrates that the estimation-based cooperative tracking method has good stability and robustness under measurement noise.
+
+  \item In the reinforcement learning training experiment, the moving average reward increases from about -2000 to about -200. This shows that the agent gradually improves its policy through interaction with the environment.
+
+  \item In the algorithm comparison experiment, the Random method has the longest average path length of 257.3001 m and the lowest target arrival rate of 10\%. In contrast, the Proposed RL method achieves a 100\% target arrival rate, an average path length of 55.1040 m and an average step number of 17.22.
+
+  \item In the three-dimensional obstacle avoidance simulation, the UAVs can generate feasible trajectories and move toward their target positions while avoiding spherical obstacles.
+\end{enumerate}
+
+Although the simulation results verify the feasibility of the proposed framework, there are still some limitations. First, the cooperative search coverage rate is relatively low, which means that the current search strategy may easily fall into local exploration. Second, the Q-learning path planning result shows that tabular Q-learning may fail in dense obstacle environments. Third, the current simulation is still simplified compared with real UAV missions.
+
+Future work will focus on improving global task allocation, uncertainty-guided exploration, graph-based communication and advanced deep reinforcement learning algorithms such as PPO, MAPPO and HR-MAPPO.
+
+% =========================================================
+% REFERENCES
+% =========================================================
+\MajorHeadingToc{REFERENCES}
+
+\begin{enumerate}[label=\arabic*., leftmargin=1.25cm]
+  \item Kaelbling, L.P. Planning and Acting in Partially Observable Stochastic Domains / L.P. Kaelbling, M.L. Littman, A.R. Cassandra // Artificial Intelligence. -- 1998. -- Vol. 101, No. 1--2. -- P. 99--134.
+
+  \item Oliehoek, F.A. A Concise Introduction to Decentralized POMDPs / F.A. Oliehoek, C. Amato. -- Springer, 2016.
+
+  \item Kalman, R.E. A New Approach to Linear Filtering and Prediction Problems / R.E. Kalman // Journal of Basic Engineering. -- 1960. -- Vol. 82, No. 1. -- P. 35--45.
+
+  \item Arulampalam, M.S. A Tutorial on Particle Filters for Online Nonlinear/Non-Gaussian Bayesian Tracking / M.S. Arulampalam, S. Maskell, N. Gordon, T. Clapp // IEEE Transactions on Signal Processing. -- 2002. -- Vol. 50, No. 2. -- P. 174--188.
+
+  \item Bar-Shalom, Y. Estimation with Applications to Tracking and Navigation / Y. Bar-Shalom, X.R. Li, T. Kirubarajan. -- Wiley, 2001.
+
+  \item Sutton, R.S. Reinforcement Learning: An Introduction / R.S. Sutton, A.G. Barto. -- 2nd ed. -- MIT Press, 2018.
+
+  \item Bellman, R. Dynamic Programming / R. Bellman. -- Princeton University Press, 1957.
+
+  \item Mnih, V. Human-Level Control through Deep Reinforcement Learning / V. Mnih, K. Kavukcuoglu, D. Silver, et al. // Nature. -- 2015. -- Vol. 518. -- P. 529--533.
+
+  \item Schulman, J. Proximal Policy Optimization Algorithms / J. Schulman, F. Wolski, P. Dhariwal, A. Radford, O. Klimov. -- 2017.
+
+  \item Lowe, R. Multi-Agent Actor-Critic for Mixed Cooperative-Competitive Environments / R. Lowe, Y. Wu, A. Tamar, J. Harb, P. Abbeel, I. Mordatch // Advances in Neural Information Processing Systems. -- 2017.
+
+  \item Rashid, T. QMIX: Monotonic Value Function Factorisation for Deep Multi-Agent Reinforcement Learning / T. Rashid, M. Samvelyan, C.S. de Witt, et al. // International Conference on Machine Learning. -- 2018.
+
+  \item Yu, C. The Surprising Effectiveness of PPO in Cooperative Multi-Agent Games / C. Yu, A. Velu, E. Vinitsky, et al. -- 2022.
+
+  \item Velickovic, P. Graph Attention Networks / P. Velickovic, G. Cucurull, A. Casanova, et al. // International Conference on Learning Representations. -- 2018.
+
+  \item Vaswani, A. Attention Is All You Need / A. Vaswani, N. Shazeer, N. Parmar, et al. // Advances in Neural Information Processing Systems. -- 2017.
+
+  \item Dietterich, T.G. Hierarchical Reinforcement Learning with the MAXQ Value Function Decomposition / T.G. Dietterich // Advances in Neural Information Processing Systems. -- 2000.
+
+  \item Achiam, J. Constrained Policy Optimization / J. Achiam, D. Held, A. Tamar, P. Abbeel // International Conference on Machine Learning. -- 2017.
+
+  \item Tobin, J. Domain Randomization for Transferring Deep Neural Networks from Simulation to the Real World / J. Tobin, R. Fong, A. Ray, J. Schneider, W. Zaremba, P. Abbeel // IEEE/RSJ International Conference on Intelligent Robots and Systems. -- 2017.
+
+  \item Gerkey, B.P. A Formal Analysis and Taxonomy of Task Allocation in Multi-Robot Systems / B.P. Gerkey, M.J. Mataric // The International Journal of Robotics Research. -- 2004. -- Vol. 23, No. 9. -- P. 939--954.
+
+  \item Cortes, J. Coverage Control for Mobile Sensing Networks / J. Cortes, S. Martinez, T. Karatas, F. Bullo // IEEE Transactions on Robotics and Automation. -- 2004. -- Vol. 20, No. 2. -- P. 243--255.
+
+  \item Thrun, S. Probabilistic Robotics / S. Thrun, W. Burgard, D. Fox. -- MIT Press, 2005.
+
+  \item Ross, S. A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning / S. Ross, G.J. Gordon, A. Bagnell // International Conference on Artificial Intelligence and Statistics. -- 2011.
+
+  \item Lillicrap, T.P. Continuous Control with Deep Reinforcement Learning / T.P. Lillicrap, J.J. Hunt, A. Pritzel, et al. -- 2016.
+
+  \item Haarnoja, T. Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor / T. Haarnoja, A. Zhou, P. Abbeel, S. Levine // International Conference on Machine Learning. -- 2018.
+
+  \item Mahler, R.P.S. Multitarget Bayes Filtering via First-Order Multitarget Moments / R.P.S. Mahler // IEEE Transactions on Aerospace and Electronic Systems. -- 2003. -- Vol. 39, No. 4. -- P. 1152--1178.
+
+  \item Zhang, D. Research on Mission Planning for UAV Swarm Based on Deep Reinforcement Learning / D. Zhang. -- Master Thesis, Shanghai Jiao Tong University, 2025.
+\end{enumerate}
+
+% =========================================================
+% APPENDIX
+% =========================================================
+\StartAppendixA
+
+\phantomsection
+\addcontentsline{toc}{section}{APPENDIX A}
+\begin{center}
+  \normalfont\normalsize APPENDIX A
+\end{center}
+
+\vspace{1.5\baselineskip}
+
+
+
+\vspace{1.5\baselineskip}
+
+The MATLAB simulation generates the following result files:
+
+\begin{enumerate}[label=\arabic*.]
+  \item Figure\_1\_Cooperative\_Search\_Trajectory.png
+  \item Figure\_2\_Search\_Performance.png
+  \item Figure\_3\_Target\_Tracking\_Trajectory.png
+  \item Figure\_4\_Tracking\_Error\_Curve.png
+  \item Figure\_5\_RL\_Reward\_Convergence.png
+  \item Figure\_6\_RL\_Path\_Planning.png
+  \item Figure\_7\_Path\_Length\_Comparison.png
+  \item Figure\_8\_Target\_Arrival\_Rate\_Comparison.png
+  \item Figure\_9\_3D\_Obstacle\_Avoidance.png
+  \item Table\_Algorithm\_Comparison.csv
+\end{enumerate}
+
+\end{document}

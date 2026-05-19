@@ -516,6 +516,11 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="消融实验名称，例如 ours-full、wo-cw-rag、wo-dadm、wo-rmse"
     )
+    parser.add_argument(
+        "--save-json",
+        default=None,
+        help="将完整分析结果保存到指定 JSON 文件，便于实验批量统计"
+    )
 
     return parser.parse_args()
 
@@ -857,7 +862,11 @@ def main():
         use_review_memory=not args.disable_review_memory,
     )
     result["uncertainty_analysis"] = uncertainty_result
-    
+    result["ablation_name"] = args.ablation_name or "ours-full"
+    result["disable_evidence_weight"] = args.disable_evidence_weight
+    result["disable_disagreement"] = args.disable_disagreement
+    result["disable_review_memory"] = args.disable_review_memory
+        
     if args.ablation_name:
         ablation_path = Path("data/ablation_results.json")
         ablation_path.parent.mkdir(parents=True, exist_ok=True)
@@ -896,8 +905,17 @@ def main():
     if mx_text:
         result["mx_context"] = mx_text
 
+    if args.save_json:
+        save_path = Path(args.save_json)
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        save_path.write_text(
+            json.dumps(result, ensure_ascii=False, indent=2),
+            encoding="utf-8"
+        )
+        print(f"📁 JSON 结果已保存: {save_path}", file=sys.stderr)
+
     if args.output_mode == "json":
-        print(json.dumps(result, ensure_ascii=True, indent=2))
+        print(json.dumps(result, ensure_ascii=False, indent=2))
     elif args.output_mode == "raw":
         print(result.get("final_trade_decision", ""))
     elif args.output_mode == "feishu-msg":

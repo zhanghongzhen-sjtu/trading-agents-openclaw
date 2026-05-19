@@ -5,12 +5,26 @@ import pandas as pd
 
 
 def normalize_cn_ticker(ticker: str) -> str:
+    """
+    将 A 股代码转换为 yfinance 可识别格式。
+
+    注意：
+    如果用户已经传入 .SZ / .SS / .SH / .BJ 后缀，
+    直接返回，不再重新判断，避免把 000300.SS 错误改成 000300.SZ。
+    """
+    ticker = ticker.strip()
+
+    if ticker.endswith((".SZ", ".SS", ".SH", ".BJ")):
+        return ticker
+
     code = ticker.replace(".SZ", "").replace(".SS", "").replace(".SH", "").replace(".BJ", "")
 
     if code.startswith(("0", "2", "3")):
         return f"{code}.SZ"
+
     if code.startswith(("6", "9")):
         return f"{code}.SS"
+
     if code.startswith(("8", "4")):
         return f"{code}.BJ"
 

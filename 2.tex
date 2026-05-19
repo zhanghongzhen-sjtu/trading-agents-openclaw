@@ -1,0 +1,731 @@
+% !TeX program = xelatex
+
+\documentclass[14pt,a4paper]{extarticle}
+
+\usepackage{geometry}
+\geometry{a4paper,top=2cm,bottom=2cm,left=3cm,right=1cm}
+
+\usepackage{fontspec}
+\IfFontExistsTF{Times New Roman}{\setmainfont{Times New Roman}}{\setmainfont{TeX Gyre Termes}}
+
+\usepackage{setspace}
+\onehalfspacing
+
+\usepackage{indentfirst}
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0pt}
+
+\usepackage{ragged2e}
+\AtBeginDocument{\justifying}
+
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\graphicspath{{./}{trading-agents/scripts/data/}}
+\usepackage{array}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{tocloft}
+\usepackage{titlesec}
+\usepackage{float}
+\usepackage{longtable}
+\usepackage[hidelinks]{hyperref}
+
+\pagestyle{plain}
+\sloppy
+
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+
+\titleformat{\section}{\normalfont\normalsize}{\thesection}{0.5em}{}
+\titleformat{\subsection}{\normalfont\normalsize}{\thesubsection}{0.5em}{}
+\titleformat{\subsubsection}{\normalfont\normalsize}{\thesubsubsection}{0.5em}{}
+
+\titlespacing*{\section}{1.25cm}{1.5\baselineskip}{0.5\baselineskip}
+\titlespacing*{\subsection}{1.25cm}{1.0\baselineskip}{0.5\baselineskip}
+\titlespacing*{\subsubsection}{1.25cm}{1.0\baselineskip}{0.5\baselineskip}
+
+\newcommand{\MajorHeadingNoToc}[1]{%
+  \clearpage
+  \phantomsection
+  \begin{center}
+    \normalfont\normalsize #1
+  \end{center}
+  \vspace{1.5\baselineskip}
+}
+
+\newcommand{\MajorHeadingToc}[1]{%
+  \clearpage
+  \phantomsection
+  \addcontentsline{toc}{section}{#1}
+  \begin{center}
+    \normalfont\normalsize #1
+  \end{center}
+  \vspace{1.5\baselineskip}
+}
+
+\renewcommand{\cftsecfont}{\normalfont\normalsize}
+\renewcommand{\cftsecpagefont}{\normalfont\normalsize}
+\renewcommand{\cftsubsecfont}{\normalfont\normalsize}
+\renewcommand{\cftsubsecpagefont}{\normalfont\normalsize}
+\renewcommand{\cftsubsubsecfont}{\normalfont\normalsize}
+\renewcommand{\cftsubsubsecpagefont}{\normalfont\normalsize}
+\setlength{\cftbeforesecskip}{0pt}
+\setlength{\cftbeforesubsecskip}{0pt}
+\setlength{\cftbeforesubsubsecskip}{0pt}
+\setlength{\cftsecindent}{0cm}
+\setlength{\cftsubsecindent}{1.25cm}
+\setlength{\cftsubsubsecindent}{2.5cm}
+\setlength{\cftsecnumwidth}{1.2cm}
+\setlength{\cftsubsecnumwidth}{1.5cm}
+\setlength{\cftsubsubsecnumwidth}{2cm}
+\renewcommand{\cftdotsep}{1}
+
+\makeatletter
+\newcommand{\ManualTableOfContents}{%
+  \clearpage
+  \phantomsection
+  \begin{center}
+    \normalfont\normalsize CONTENTS
+  \end{center}
+  \vspace{1.5\baselineskip}
+  \begingroup
+    \setlength{\parindent}{0pt}
+    \@starttoc{toc}
+  \endgroup
+}
+\makeatother
+
+\DeclareCaptionLabelSeparator{samaraendash}{~\textendash~}
+\captionsetup{font=normalsize,labelfont=normalfont,textfont=normalfont}
+\captionsetup[figure]{name=Figure,labelsep=samaraendash,justification=centering,singlelinecheck=true}
+\captionsetup[table]{name=Table,labelsep=samaraendash,justification=raggedright,singlelinecheck=false}
+
+\setlist{topsep=0pt,partopsep=0pt,itemsep=0pt,parsep=0pt}
+\setlist[itemize]{label=-,leftmargin=1.25cm}
+\setlist[enumerate]{leftmargin=1.25cm}
+
+\newcommand{\StartAppendixA}{%
+  \clearpage
+  \appendix
+  \setcounter{figure}{0}
+  \setcounter{table}{0}
+  \setcounter{equation}{0}
+  \renewcommand{\thefigure}{A.\arabic{figure}}
+  \renewcommand{\thetable}{A.\arabic{table}}
+  \renewcommand{\theequation}{A.\arabic{equation}}
+}
+
+\begin{document}
+
+\begin{center}
+  \normalfont\normalsize
+  Disagreement-Aware Multi-Agent Investment Research Decision System under Financial Uncertainty
+\end{center}
+
+\MajorHeadingNoToc{ABSTRACT}
+
+Master thesis: 25 pages, 6 figures, 4 tables, 24 sources.
+
+LARGE LANGUAGE MODEL, MULTI-AGENT SYSTEM, FINANCIAL DECISION-MAKING, EVIDENCE CREDIBILITY, DISAGREEMENT DIAGNOSIS, RISK CONTROL, REVIEW MEMORY
+
+This thesis studies a multi-agent investment research decision system for financial markets under uncertainty. The work is based on the Trading-Agents-OpenClaw project and improves it with three mechanisms: credibility-weighted evidence selection, multi-dimensional disagreement diagnosis, and review-memory-driven calibration.
+
+Financial decision-making is difficult because price data, fundamentals, news, sentiment, and macro events may point in different directions. A single large language model can summarize such information, but it may also overreact to noisy evidence, ignore conflicting signals, or repeat past mistakes. The proposed system treats disagreement among financial agents not as a by-product of discussion, but as an observable signal of uncertainty. It converts market, fundamental, sentiment, news, risk, and trading outputs into structured records, estimates evidence credibility, measures disagreement, and then adjusts the final trading action and position size.
+
+Experiments are conducted using the project scripts and cached multi-agent outputs. In the mechanism-level ablation study, the full model obtains a disagreement score of 0.466 and limits the suggested position to 20.57\%, while the model without disagreement diagnosis sets disagreement to zero and increases the position to 30.00\%. In the four-stock backtest with 20 samples, the full model has a total return of -0.59\% and a maximum drawdown of 2.01\%, while the three ablated models produce larger losses and drawdowns. The preliminary results suggest that the proposed uncertainty-aware mechanisms can improve interpretability and reduce risk exposure in the tested high-conflict cases.
+
+\ManualTableOfContents
+
+\section{Introduction}
+
+\subsection{Research Background}
+
+Financial markets are dynamic systems in which structured data and unstructured information interact. Prices are affected by corporate fundamentals, technical patterns, liquidity, macro policy, investor sentiment, and unexpected events. Classical financial analysis and quantitative trading methods can be efficient when their assumptions are stable, but they are often weak at interpreting heterogeneous text evidence and explaining conflicting signals [1--4].
+
+Large language models have expanded the ability of software systems to read financial reports, summarize news, call tools, and produce natural-language reasoning. Financial language models such as FinBERT, BloombergGPT, and FinGPT demonstrate that domain-specific language understanding is useful for financial text and decision support [7--9]. At the same time, agent frameworks such as ReAct, AutoGen, CAMEL, and Generative Agents show that language models can be organized into tool-using and memory-augmented agents [11--14].
+
+TradingAgents applies this idea to investment research by simulating a trading firm with market analysts, fundamental analysts, news analysts, bull and bear researchers, risk managers, and traders [18]. The Trading-Agents-OpenClaw project extends this workflow with local scripts, data integration, reporting, and review functions. However, the original workflow still leaves three issues open. First, agent disagreement is mostly expressed as text and is not directly used for risk control. Second, retrieved financial evidence is not sufficiently weighted by reliability. Third, historical review is often stored as a narrative rather than as a calibration signal for later decisions.
+
+\subsection{Aim and Contributions}
+
+The aim of this thesis is to design and implement an uncertainty-aware multi-agent investment research system. The system must preserve the explainability of the original multi-agent workflow while making disagreement and evidence quality computable.
+
+The main contributions are:
+
+\begin{enumerate}[label=\arabic*)]
+  \item A credibility-weighted evidence selection mechanism that scores financial evidence by source authority, freshness, cross-source consistency, data quality, and historical reliability.
+  \item A disagreement diagnosis mechanism that measures direction, confidence, evidence, risk, and time-horizon disagreement among financial agents.
+  \item A risk-adaptive decision mechanism that maps disagreement into position reduction and control actions.
+  \item A review memory mechanism that records decisions and market feedback for later calibration.
+  \item An implementation and ablation evaluation based on the Trading-Agents-OpenClaw project.
+\end{enumerate}
+
+\subsection{Research Scope}
+
+The system studied in this thesis is not intended to be a fully automated trading robot. It is positioned as a decision-support system for investment research. This distinction is important. A trading robot would need order execution, broker integration, strict compliance controls, capital allocation rules, and real-time fail-safe mechanisms. The present work focuses on the research and decision layer: collecting evidence, organizing agent opinions, detecting uncertainty, and producing a risk-adjusted recommendation.
+
+The research scope is therefore limited to three questions. First, how can heterogeneous financial information be represented in a form that is suitable for both natural-language reasoning and quantitative control? Second, how can disagreement among multiple financial agents be measured and interpreted? Third, how can this disagreement influence final position size rather than remaining only a textual explanation in a report?
+
+The system assumes that external data interfaces can provide the required market and textual information. It also assumes that the large language model is used as a reasoning component rather than as a guaranteed forecasting oracle. The output of the system should be interpreted as an auxiliary research signal. Human review and independent risk control remain necessary.
+
+\subsection{Thesis Organization}
+
+The thesis is organized as follows. Section 2 reviews financial language models, LLM agents, retrieval-augmented generation, and financial risk evaluation. Section 3 describes the system design and explains how the proposed modules are mapped to project files. Section 4 presents the core method, including evidence credibility scoring, disagreement diagnosis, risk-adaptive position control, and review memory. Section 5 reports implementation details and experimental results. Section 6 summarizes the work and discusses future directions.
+
+\section{Related Work}
+
+\subsection{Financial Language Models}
+
+FinBERT adapts BERT to financial sentiment analysis and shows the value of domain-specific language modeling [6, 7]. BloombergGPT trains a large language model on broad financial corpora, while FinGPT emphasizes an open-source and data-centric approach for financial large language models [8, 9]. These works focus mainly on language understanding and generation. This thesis focuses on how financial language outputs can be organized into a risk-aware multi-agent decision process.
+
+Financial language differs from general news text in several ways. First, it uses compact domain terminology, such as earnings surprise, free cash flow, valuation multiple, drawdown, and guidance revision. Second, the meaning of a sentence is often conditional on time. A report that is useful before an earnings release may become outdated immediately after the release. Third, financial text often contains mixed evidence. A company may report strong revenue growth but weak margins, or a sector may benefit from policy support while facing short-term liquidity pressure. These characteristics make financial language modeling useful but also risky when the system lacks explicit evidence control.
+
+For this reason, the thesis does not attempt to train a new financial language model. Training a domain model would require a large corpus, substantial computing resources, and a separate evaluation protocol. Instead, this work assumes that a capable LLM already exists and studies how its outputs can be made more reliable through system design. The proposed mechanisms are model-agnostic: the same evidence scoring and disagreement diagnosis can be used with different LLM providers, provided that the agent outputs can be converted into structured fields.
+
+\subsection{LLM Agents and Multi-Agent Collaboration}
+
+ReAct combines reasoning traces and tool actions, which is important for financial systems that must retrieve data and justify decisions [11]. AutoGen and CAMEL provide general multi-agent conversation frameworks [12, 13]. Generative Agents, Reflexion, Self-Refine, and Voyager demonstrate that memory, feedback, and iterative improvement can improve agent behavior [14--17]. This thesis adopts these ideas in a financial setting, where feedback is delayed and risk-sensitive.
+
+The multi-agent design is especially suitable for financial research because real investment decisions are rarely made from a single viewpoint. A technical analyst may focus on trend and volume, a fundamental analyst may focus on profitability and valuation, a news analyst may focus on events, and a risk manager may focus on downside scenarios. In a language-agent system, these roles can be represented by separate prompts and separate tool contexts. The benefit is not only parallel analysis, but also disagreement exposure.
+
+However, multi-agent systems also introduce a new problem. If each agent produces a long natural-language report, the final trader agent may be forced to summarize conflicting opinions without knowing how severe the conflict is. A bullish fundamental report and a bearish technical report may both be plausible. If the system simply asks another LLM to decide, it may hide the conflict behind a confident final answer. The main idea of this thesis is to keep the conflict visible and computable.
+
+Therefore, the proposed workflow separates two tasks. Natural-language agents still produce rich reasoning and evidence descriptions. A structured uncertainty layer then extracts action, confidence, evidence stance, risk points, and time horizon from these outputs. This layer does not replace the agents; it converts their disagreement into a risk-control signal.
+
+\subsection{Retrieval-Augmented Generation}
+
+Retrieval-augmented generation combines a parametric language model with an external document store [10]. It is useful in finance because current news and filings change faster than model parameters. However, standard RAG usually ranks documents by relevance, while financial decisions also require credibility. Therefore, this thesis adds explicit evidence scoring and conflict detection.
+
+In a general question-answering task, the most relevant document is often the best context. In finance, this assumption is too weak. A highly relevant social-media rumor may be less useful than a less semantically similar but official exchange disclosure. Similarly, a recent news article may be more important for a short-term trade than a three-month-old commentary. The proposed credibility-weighted RAG mechanism therefore treats retrieval as a two-dimensional problem: relevance determines whether a document is connected to the query, while credibility determines how strongly it should influence the reasoning process.
+
+The implemented mechanism should be understood as credibility-weighted evidence selection and organization rather than a full vector-database RAG pipeline. The project relies on data wrappers, market data interfaces, news and report search, and cached analysis outputs. It does not claim to implement a separate embedding index, chunking pipeline, or vector reranker. The mechanism also handles evidence conflict. If one evidence item supports a bullish conclusion while another supports a bearish conclusion, the system records this conflict rather than forcing an immediate merge. The conflict is then passed to the disagreement layer, where it contributes to the evidence disagreement component.
+
+\subsection{Financial Risk Evaluation}
+
+Financial strategies are commonly evaluated by return, volatility, maximum drawdown, win rate, and risk-adjusted return [3, 5]. Deep reinforcement learning frameworks such as FinRL highlight the importance of reproducible backtesting and practical constraints in trading research [19--21]. This thesis uses a lightweight backtest to verify whether the proposed mechanisms reduce risk exposure.
+
+The evaluation in this thesis is intentionally conservative. The backtest is not used to claim that the system can consistently outperform the market. The sample is too small for that claim. Instead, the experiment asks a narrower question: when the same raw multi-agent analysis is processed by different uncertainty modules, does the full system take more cautious positions in high-disagreement cases, and does this reduce losses in the tested samples?
+
+This evaluation logic matches the goal of the thesis. The main target is not price prediction accuracy alone, but risk-aware decision control. A model that produces a correct direction but excessive position size may still be dangerous. Conversely, a system that lowers exposure under high uncertainty may be useful even when the final return remains slightly negative in a short sample.
+
+\subsection{Summary of Related Work}
+
+The reviewed literature supports three design principles. First, financial language processing benefits from domain awareness, but language understanding alone is not sufficient for risk control. Second, LLM agents are effective at decomposing complex tasks, but multi-agent disagreement must be measured explicitly. Third, financial evaluation should include both return and risk indicators. The proposed system combines these principles in a project-level implementation.
+
+\section{System Design}
+
+\subsection{Project Basis}
+
+The implemented system is based on a fork of DWLng/trading-agents-openclaw, with additional uncertainty modules and validation scripts. Although the repository also contains Feishu report generation, Cloudflare deployment, MX Skills wrappers, cron jobs, and local data scripts, this thesis focuses on the uncertainty-aware decision layer implemented under \texttt{trading-agents/scripts/uncertainty} and its interaction with \texttt{run\_analysis.py} and backtesting scripts. The relevant project files are summarized in Table~\ref{tab:files}.
+
+\begin{table}[H]
+\caption{Mapping between thesis modules and project files}
+\label{tab:files}
+\centering
+\begin{tabular}{|p{0.27\textwidth}|p{0.36\textwidth}|p{0.27\textwidth}|}
+\hline
+Thesis module & Project file or directory & Function \\
+\hline
+Analysis entry & \texttt{trading-agents/scripts/run\_analysis.py} & Runs multi-agent analysis and integrates uncertainty modules \\
+\hline
+Disagreement diagnosis & \texttt{trading-agents/scripts/uncertainty/disagreement.py} & Computes multi-dimensional disagreement \\
+\hline
+Adaptive decision & \texttt{trading-agents/scripts/uncertainty/adaptive\_decision.py} & Converts disagreement into risk-aware action and position \\
+\hline
+Evidence weighting & \texttt{trading-agents/scripts/uncertainty/evidence.py} & Scores evidence credibility and identifies conflicts \\
+\hline
+Review memory & \texttt{trading-agents/scripts/uncertainty/review\_memory.py}; \texttt{trading-agents/scripts/review\_update.py} & Stores feedback and updates calibration variables \\
+\hline
+Validation & \texttt{trading-agents/scripts/run\_backtest.py}; \texttt{trading-agents/scripts/run\_ablation\_from\_cache.py} & Runs ablation and backtest experiments \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Functional Requirements}
+
+The system is designed around the investment research workflow. The first requirement is multi-source data acquisition. The system should collect historical prices, technical indicators, financial statements, company announcements, news, and sentiment signals. These inputs have different formats and reliability levels, so the system must not treat them as interchangeable text fragments.
+
+The second requirement is evidence structuring. Each useful piece of information should be converted into an evidence record with fields such as source, time, type, stance, relevance, credibility, and conflict identifiers. This structure allows later modules to trace why a decision was made and which evidence items contributed to it.
+
+The third requirement is multi-agent analysis. The system should allow specialized agents to analyze the same ticker from different viewpoints. Each agent should output not only a report, but also structured fields: decision direction, confidence, evidence identifiers, risk points, suggested position, and time horizon.
+
+The fourth requirement is uncertainty-aware decision control. The final action must not be based only on a textual summary. It should also depend on measured disagreement. When disagreement is high, the system should reduce position size, request additional evidence, trigger a second debate, or keep the recommendation conservative.
+
+The fifth requirement is reviewability. Every analysis should be saved in a form that can be checked later. This includes raw agent reports, structured outputs, evidence scores, disagreement scores, final action, position, and later market feedback.
+
+\subsection{Non-Functional Requirements}
+
+The first non-functional requirement is explainability. A financial decision system must explain why it recommends buy, hold, or sell. The explanation should include key evidence, agent opinions, disagreement sources, and risk warnings.
+
+The second requirement is robustness. Financial information is noisy, and the system should avoid overreacting to isolated signals. Robustness is improved by credibility scoring, cross-source checking, and position reduction under high uncertainty.
+
+The third requirement is modularity. Evidence scoring, disagreement diagnosis, adaptive decision, and review memory should be implemented as separate modules. This makes it possible to test each mechanism independently and replace one component without rewriting the whole system.
+
+The fourth requirement is reproducibility. For thesis experiments, repeated LLM calls can introduce noise. Therefore, the ablation experiment uses cached raw outputs. This ensures that differences between variants are caused by the uncertainty modules rather than random generation changes.
+
+\subsection{System Architecture}
+
+The system contains five layers.
+
+\begin{enumerate}[label=\arabic*)]
+  \item The data layer collects market prices, technical indicators, financial data, news, and sentiment.
+  \item The evidence layer converts raw material into structured evidence records.
+  \item The agent layer runs market, fundamental, sentiment, news, risk, and trading agents.
+  \item The uncertainty layer computes disagreement and controls the final action.
+  \item The review layer records decisions and later feedback.
+\end{enumerate}
+
+The key design choice is to keep the natural-language reasoning of the agents but extract structured fields from it. Each agent output includes action, confidence, evidence identifiers, suggested position, risk points, and time horizon.
+
+\subsection{Core Data Structures}
+
+The evidence object is the basic unit of the evidence layer. It contains the evidence identifier, ticker, source, publication time, evidence type, content summary, stance, relevance score, credibility score, and conflict identifiers. This object makes evidence traceable and prevents the system from losing the source of a claim after it is inserted into an LLM prompt.
+
+The agent output object contains the agent name, role, action, confidence, evidence identifiers, risk points, suggested position, reasoning summary, and time horizon. This object connects natural-language reports with quantitative disagreement calculation.
+
+The decision result object stores the final action, final position, disagreement score, main disagreement type, risk level, key evidence, and explanation. It is used both for report generation and for review memory.
+
+The review memory object stores realized return, drawdown, decision correctness, effective agents, misleading agents, effective evidence, misleading evidence, and lessons. It is not a replacement for model training. It is an external memory that adjusts weights and thresholds in later runs.
+
+\subsection{Workflow}
+
+The workflow begins with a ticker and an analysis date. The system collects raw data and converts it into candidate evidence. The evidence layer scores each item and detects conflicts. The multi-agent layer then generates structured reports. The uncertainty layer computes disagreement across agent outputs and evidence stances. Finally, the adaptive decision module produces the action and position, and the review memory module stores the decision for later feedback.
+
+This workflow keeps the advantages of the original TradingAgents design while adding an explicit control loop. The original agents remain responsible for domain reasoning. The new modules are responsible for reliability and risk control.
+
+\section{Core Method}
+
+\subsection{Evidence Credibility}
+
+Let $e_j$ be a candidate evidence item. Its credibility score is defined as
+
+\begin{equation}
+C(e_j)=
+\alpha_s S_j+\alpha_t T_j+\alpha_c C_j+\alpha_q Q_j+\alpha_h H_j ,
+\label{eq:credibility}
+\end{equation}
+
+where $S_j$ is source authority, $T_j$ is freshness, $C_j$ is cross-source consistency, $Q_j$ is data quality, and $H_j$ is historical reliability. The weights satisfy
+
+\begin{equation}
+\alpha_s+\alpha_t+\alpha_c+\alpha_q+\alpha_h=1,
+\qquad
+\alpha_s,\alpha_t,\alpha_c,\alpha_q,\alpha_h \geq 0.
+\label{eq:credibility-weights}
+\end{equation}
+
+In the initial setting, the weights are
+
+\begin{equation}
+\alpha_s=0.25,\quad
+\alpha_t=0.20,\quad
+\alpha_c=0.20,\quad
+\alpha_q=0.20,\quad
+\alpha_h=0.15.
+\label{eq:initial-weights}
+\end{equation}
+
+The final retrieval priority combines relevance and credibility:
+
+\begin{equation}
+W(e_j)=\beta R(e_j)+(1-\beta)C(e_j),
+\qquad 0\leq\beta\leq1.
+\label{eq:retrieval-weight}
+\end{equation}
+
+The scoring function is intentionally simple. It is not meant to represent a complete theory of financial truth. Instead, it gives the system a transparent and adjustable way to prefer stronger evidence. For example, an official filing may receive a high source authority score, while a social-media post may receive a low score. A recent article may receive a high freshness score for a short-term analysis, while old news may be downgraded. If multiple independent sources support the same stance, the cross-source consistency score increases.
+
+The credibility score also affects prompt construction. High-credibility evidence is placed earlier in the context and may receive a longer summary. Low-credibility evidence is either shortened or marked as auxiliary information. Conflicting evidence is not removed automatically, because removing it may hide important uncertainty. Instead, conflict information is preserved and passed to the disagreement module.
+
+\subsection{Evidence Conflict Detection}
+
+Evidence conflict is detected by comparing the stances of evidence items. Let $s_j \in \{-1,0,1\}$ denote the stance of evidence item $e_j$, where -1 means bearish, 0 means neutral, and 1 means bullish. Two evidence items are considered directionally conflicting when
+
+\begin{equation}
+s_j s_k < 0 .
+\label{eq:evidence-conflict}
+\end{equation}
+
+The conflict indicator is then stored in the evidence object:
+
+\begin{equation}
+\mathrm{conflict}(e_j,e_k)=
+\begin{cases}
+1, & s_j s_k < 0,\\
+0, & \text{otherwise}.
+\end{cases}
+\label{eq:conflict-indicator}
+\end{equation}
+
+This conflict rule is deliberately interpretable. It can be extended in future work by using semantic contradiction detection, entailment models, or event-level relation extraction.
+
+\subsection{Disagreement Diagnosis}
+
+For $n$ agents, each agent $i$ outputs a decision $a_i \in \{-1,0,1\}$ for sell, hold, and buy. The weighted direction score is
+
+\begin{equation}
+\bar{a}=\sum_{i=1}^{n} w_i a_i ,
+\qquad \sum_{i=1}^{n}w_i=1 .
+\label{eq:direction-score}
+\end{equation}
+
+Direction disagreement is measured as weighted variance:
+
+\begin{equation}
+D_{\mathrm{dir}}=\sum_{i=1}^{n} w_i(a_i-\bar{a})^2 .
+\label{eq:direction-disagreement}
+\end{equation}
+
+Confidence disagreement is defined by the dispersion of confidence scores:
+
+\begin{equation}
+D_{\mathrm{conf}}=\sqrt{\frac{1}{n}\sum_{i=1}^{n}(q_i-\bar{q})^2}.
+\label{eq:confidence-disagreement}
+\end{equation}
+
+The total disagreement score is
+
+\begin{equation}
+D=
+\lambda_1D_{\mathrm{dir}}+
+\lambda_2D_{\mathrm{conf}}+
+\lambda_3D_{\mathrm{evd}}+
+\lambda_4D_{\mathrm{risk}}+
+\lambda_5D_{\mathrm{hor}},
+\label{eq:total-disagreement}
+\end{equation}
+
+where
+
+\begin{equation}
+\lambda_1+\lambda_2+\lambda_3+\lambda_4+\lambda_5=1,
+\qquad
+\lambda_k\geq0.
+\label{eq:lambda}
+\end{equation}
+
+The five disagreement components have different meanings. Direction disagreement measures whether agents recommend different actions. Confidence disagreement measures whether agents express different levels of certainty. Evidence disagreement measures whether the evidence used by agents points in different directions. Risk disagreement measures whether risk warnings are consistent. Horizon disagreement measures whether agents disagree because they analyze different time scales.
+
+This decomposition is useful because different conflicts require different control actions. A direction conflict may require a second debate. An evidence conflict may require re-retrieval. A risk conflict may require risk-manager arbitration. A horizon conflict may not mean that one agent is wrong; it may indicate that short-term and medium-term strategies should be separated.
+
+\subsection{Control Action Mapping}
+
+The system maps the main disagreement type to a control action. If $D$ is low, the final decision is allowed to follow the trading agent with normal position control. If $D$ is medium, the system reduces position size. If $D$ is high, the system may recommend hold or request additional evidence before action. This mapping is summarized as follows:
+
+\begin{equation}
+u(D)=
+\begin{cases}
+\mathrm{normal}, & D < \tau_1,\\
+\mathrm{reduce}, & \tau_1 \leq D < \tau_2,\\
+\mathrm{review}, & D \geq \tau_2.
+\end{cases}
+\label{eq:control-action}
+\end{equation}
+
+The thresholds $\tau_1$ and $\tau_2$ can be calibrated by review memory. In the current implementation, the threshold logic is rule-based, which makes it easy to inspect and debug.
+
+\subsection{Risk-Adaptive Position}
+
+The final position is reduced when disagreement is high:
+
+\begin{equation}
+p=\min\left(p_{\max},\max\left(0,p_0(1-\gamma D)m_a\right)\right),
+\label{eq:position}
+\end{equation}
+
+where $p_0$ is the base position, $\gamma$ is the disagreement penalty, $m_a$ is an action multiplier, and $p_{\max}$ is the maximum allowed position.
+
+Equation~\ref{eq:position} is the core connection between disagreement and trading exposure. If the agents agree and $D$ is small, the position remains close to the base value. If disagreement increases, the term $(1-\gamma D)$ reduces exposure. The maximum and minimum operators prevent invalid positions.
+
+This design follows a conservative assumption: when the system cannot reach a stable consensus, it should reduce exposure rather than increase confidence. This does not mean that disagreement is always negative. Sometimes disagreement may reveal an opportunity. However, for a thesis-level decision-support system, it is safer to first treat high disagreement as a risk signal.
+
+\subsection{Review Memory}
+
+After a decision, the system records the ticker, date, agent outputs, evidence scores, disagreement score, final action, position, realized return, and drawdown. A simplified memory update is
+
+\begin{equation}
+\theta_{t+1}=(1-\eta)\theta_t+\eta\,g(r_t,d_t),
+\label{eq:memory-update}
+\end{equation}
+
+where $\theta_t$ denotes calibration parameters, $r_t$ is realized return, $d_t$ is drawdown, and $\eta$ is the update rate. This formula does not update language-model parameters. It updates external weights and thresholds used by the decision pipeline.
+
+Review memory has three roles. First, it stores an audit trail. A user can inspect what evidence and agent opinions led to a recommendation. Second, it supports later calibration. If an evidence source repeatedly leads to misleading conclusions, its historical reliability can be reduced. Third, it helps identify systematic errors, such as excessive position size during high disagreement or overreliance on one type of evidence.
+
+The current implementation uses JSON-based memory records. This is simple and transparent, but not ideal for large-scale deployment. In future work, the memory could be stored in a database with query support, time decay, and market-regime tags.
+
+\section{Implementation and Experiments}
+
+\subsection{Experimental Setup}
+
+The experiments compare four configurations:
+
+\begin{enumerate}[label=\arabic*)]
+  \item Ours-full: credibility-weighted evidence selection, disagreement diagnosis, adaptive decision, and review memory enabled.
+  \item w/o CW-RAG: evidence credibility weighting disabled. The label is kept for compatibility with the experiment script, but the implementation corresponds to credibility-weighted evidence selection rather than a complete vector-index RAG system.
+  \item w/o DADM: disagreement-aware decision module disabled.
+  \item w/o RM: review-memory calibration disabled.
+\end{enumerate}
+
+To reduce randomness from repeated LLM calls, the ablation study uses cached raw multi-agent outputs. Each variant is evaluated on the same underlying analysis result.
+
+The evaluation uses two levels. The mechanism-level experiment checks whether the modules change internal variables such as disagreement score and position size. The return-level experiment checks whether these internal changes affect simulated strategy return and drawdown. Both levels are necessary. A mechanism can look reasonable but have no effect on final decisions; conversely, a return difference can be accidental if the mechanism-level change is not observable.
+
+All experiments are produced by local scripts in the project directory. The plots are generated from CSV and JSON outputs rather than manually drawn values. This improves reproducibility and reduces the risk of reporting inconsistent numbers.
+
+\subsection{Mechanism-Level Ablation}
+
+Table~\ref{tab:ablation} shows the mechanism-level ablation result for the cached 000630 case.
+
+\begin{table}[H]
+\caption{Mechanism-level ablation result}
+\label{tab:ablation}
+\centering
+\begin{tabular}{|p{0.22\textwidth}|p{0.14\textwidth}|p{0.14\textwidth}|p{0.14\textwidth}|p{0.16\textwidth}|}
+\hline
+Model & Total disagreement & Direction disagreement & Evidence disagreement & Suggested position \\
+\hline
+Ours-full & 0.466 & 0.965 & 0.366 & 20.57\% \\
+\hline
+w/o CW-RAG & 0.473 & 0.965 & 0.403 & 20.42\% \\
+\hline
+w/o DADM & 0.000 & 0.000 & 0.000 & 30.00\% \\
+\hline
+w/o RM & 0.465 & 0.965 & 0.366 & 21.63\% \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.88\textwidth]{fig_paper_disagreement.png}
+  \caption{Disagreement score comparison}
+  \label{fig:disagreement}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.88\textwidth]{fig_paper_position.png}
+  \caption{Suggested position comparison}
+  \label{fig:position}
+\end{figure}
+
+The full model detects a high direction disagreement and therefore limits the position. The model without disagreement diagnosis cannot observe the conflict and raises the position to 30.00\%. This confirms that disagreement diagnosis is not only an explanation variable but also a risk-control variable.
+
+The ablation result also shows the different roles of the three modules. Removing credibility weighting changes the evidence disagreement from 0.366 to 0.403. This means that evidence weighting affects how conflicting sources are interpreted. Removing review memory keeps the total disagreement close to the full model but increases the final position slightly. This indicates that review memory mainly works through calibration rather than through the current disagreement structure.
+
+The most important contrast is between Ours-full and w/o DADM. In the w/o DADM setting, the raw agent outputs are kept unchanged, but the disagreement measurement and disagreement-based position penalty are removed. Therefore, the system falls back to the base position rule. The w/o DADM model reports zero disagreement, not because agents truly agree, but because the disagreement module is disabled. This is dangerous in a decision system: the absence of a measurement can be mistaken for the absence of risk. The full model avoids this problem by keeping the conflict visible.
+
+\subsection{Single-Case Return Simulation}
+
+For the 000630 case, the five-day realized stock return after the analysis date is -3.22\%. If the model outputs buy, strategy return is computed as
+
+\begin{equation}
+R_{\mathrm{strategy}}=pR_{\mathrm{stock}}.
+\label{eq:strategy-return}
+\end{equation}
+
+The results are shown in Table~\ref{tab:singlecase}.
+
+\begin{table}[H]
+\caption{Single-case simulated return}
+\label{tab:singlecase}
+\centering
+\begin{tabular}{|p{0.24\textwidth}|p{0.14\textwidth}|p{0.16\textwidth}|p{0.16\textwidth}|p{0.16\textwidth}|}
+\hline
+Model & Action & Position & Stock return & Strategy return \\
+\hline
+Ours-full & Buy & 20.57\% & -3.22\% & -0.66\% \\
+\hline
+w/o CW-RAG & Buy & 20.42\% & -3.22\% & -0.66\% \\
+\hline
+w/o DADM & Buy & 30.00\% & -3.22\% & -0.96\% \\
+\hline
+w/o RM & Buy & 21.63\% & -3.22\% & -0.70\% \\
+\hline
+\end{tabular}
+\end{table}
+
+The full model loses less than the variant without disagreement diagnosis because it takes a smaller position in a high-conflict case.
+
+The single-case simulation should not be overinterpreted. One stock and one date cannot prove trading profitability. Its value is diagnostic. It shows that, under the same negative future return, a higher position leads to a larger loss. Since the full model takes a lower position when disagreement is high, it suffers a smaller loss than the model without disagreement diagnosis.
+
+This case also illustrates why position control matters. If two models produce the same buy action, they may still have different risk profiles. A binary action label hides this difference, while position size exposes it. Therefore, the thesis evaluates both final action and suggested position.
+
+\subsection{Four-Stock Backtest}
+
+The batch backtest uses four stocks and 20 samples. The performance metrics are total return, average return, volatility, maximum drawdown, win rate, and a Sharpe-like score:
+
+\begin{equation}
+S=\frac{\bar{R}}{\sigma_R+\varepsilon}.
+\label{eq:sharpe-like}
+\end{equation}
+
+Table~\ref{tab:backtest} presents the backtest summary.
+
+\begin{table}[H]
+\caption{Four-stock backtest summary}
+\label{tab:backtest}
+\centering
+\begin{tabular}{|p{0.20\textwidth}|p{0.11\textwidth}|p{0.13\textwidth}|p{0.13\textwidth}|p{0.13\textwidth}|p{0.13\textwidth}|}
+\hline
+Model & Samples & Total return & Volatility & Max drawdown & Sharpe-like \\
+\hline
+Ours-full & 20 & -0.59\% & 0.72\% & 2.01\% & -0.037 \\
+\hline
+w/o CW-RAG & 20 & -4.37\% & 0.58\% & 4.37\% & -0.383 \\
+\hline
+w/o DADM & 20 & -7.33\% & 0.95\% & 7.68\% & -0.394 \\
+\hline
+w/o RM & 20 & -9.71\% & 1.51\% & 9.71\% & -0.330 \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.88\textwidth]{fig_paper_total_return_4stocks.png}
+  \caption{Total return in the four-stock backtest}
+  \label{fig:total-return}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.88\textwidth]{fig_paper_max_drawdown_4stocks.png}
+  \caption{Maximum drawdown in the four-stock backtest}
+  \label{fig:max-drawdown}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.88\textwidth]{fig_line_model_vs_market_4stocks.png}
+  \caption{Normalized strategy equity curve}
+  \label{fig:equity}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.88\textwidth]{fig_paper_sharpe_like_4stocks.png}
+  \caption{Sharpe-like score in the four-stock backtest}
+  \label{fig:sharpe-like}
+\end{figure}
+
+The full model still has a small negative return in this short sample, but it has the lowest loss and the smallest maximum drawdown. This result supports the main hypothesis of the thesis: uncertainty-aware control may not guarantee profit, but it can reduce risk exposure when agent opinions conflict.
+
+The maximum drawdown comparison is especially important. The full model has a maximum drawdown of 2.01\%, while the ablated variants reach 4.37\%, 7.68\%, and 9.71\%. This suggests that the complete uncertainty pipeline is more defensive in adverse samples. The Sharpe-like score is also less negative for the full model than for the other variants.
+
+The equity curve uses the original project-generated line chart rather than a redesigned line chart. This preserves the raw visual style of the terminal output and makes the figure closer to the experiment artifact. The bar charts are formatted for readability, but the line chart is intentionally kept close to the original project output as requested.
+
+\subsection{Threats to Validity}
+
+There are several threats to validity. First, the backtest sample is small. A larger dataset covering different market regimes is required before making strong claims about investment performance. Second, the LLM-generated raw outputs may depend on prompts, model provider, and data availability. Third, the evidence credibility weights are partly heuristic. Although the formulas are transparent, the initial weights may not be optimal.
+
+Fourth, the strategy simulation is simplified. It does not include transaction costs, slippage, liquidity constraints, limit-up and limit-down rules, or portfolio-level capital allocation. Fifth, the system evaluates individual stock decisions rather than a complete portfolio. These limitations do not invalidate the mechanism-level finding, but they limit the financial strength of the backtest conclusion.
+
+\subsection{Reproducibility}
+
+The experiment can be reproduced from the project scripts. The cached ablation uses \texttt{run\_ablation\_from\_cache.py}. The batch backtest uses \texttt{run\_backtest.py}. The paper figures are generated by \texttt{plot\_paper\_figures.py}. The main result files are \texttt{ablation\_results.json}, \texttt{backtest\_summary\_4stocks.csv}, and \texttt{backtest\_results\_4stocks.csv}.
+
+The thesis uses these generated files directly. Therefore, the numerical tables and figures are consistent with the project outputs. If new model outputs or new price data are used, the figures can be regenerated by running the plotting script again.
+
+\section{Conclusion}
+
+This thesis designed and implemented a disagreement-aware multi-agent investment research decision system based on Trading-Agents-OpenClaw. The system introduces credibility-weighted evidence selection, multi-dimensional disagreement diagnosis, adaptive position control, and review-memory calibration. The formulas were defined explicitly so that evidence weights and disagreement weights satisfy proper normalization constraints.
+
+The experiments show that disabling disagreement diagnosis causes the system to ignore agent conflict and increase position size. In the four-stock backtest, the complete system achieves the smallest loss and drawdown among the compared configurations. Given the small sample size, this result should be interpreted as preliminary diagnostic evidence that the proposed approach improves interpretability and provides useful risk control in the tested uncertain cases.
+
+The work still has limitations. The backtest sample is small, the evidence scoring weights are partly heuristic, and the review memory mechanism is still rule-based. Future work should extend the system to larger stock pools, portfolio-level allocation, stronger risk measures such as VaR and CVaR, and more rigorous benchmarks for financial LLM agents.
+
+Several future directions are promising. First, the evidence scoring model can be learned from historical review data rather than fixed manually. Second, the system can add market-regime detection so that memory from a bull market is not blindly reused in a bear market. Third, the framework can be extended from single-stock recommendations to portfolio construction. Fourth, the risk manager can incorporate more formal risk measures, including value at risk, conditional value at risk, and dynamic stop-loss rules. Finally, the evaluation should include factuality, citation quality, robustness, and explanation quality in addition to return metrics.
+
+\MajorHeadingToc{REFERENCES}
+
+\begin{enumerate}[label=\arabic*., leftmargin=1.25cm]
+  \item Markowitz, H. Portfolio Selection / H. Markowitz // The Journal of Finance. -- 1952. -- Vol. 7, No. 1. -- P. 77--91.
+  \item Fama, E.F. Efficient Capital Markets: A Review of Theory and Empirical Work / E.F. Fama // The Journal of Finance. -- 1970. -- Vol. 25, No. 2. -- P. 383--417.
+  \item Sharpe, W.F. Mutual Fund Performance / W.F. Sharpe // The Journal of Business. -- 1966. -- Vol. 39, No. 1. -- P. 119--138.
+  \item Lo, A.W. The Adaptive Markets Hypothesis: Market Efficiency from an Evolutionary Perspective / A.W. Lo // The Journal of Portfolio Management. -- 2004. -- Vol. 30, No. 5. -- P. 15--29.
+  \item Moskowitz, T.J. Time Series Momentum / T.J. Moskowitz, Y.H. Ooi, L.H. Pedersen // Journal of Financial Economics. -- 2012. -- Vol. 104, No. 2. -- P. 228--250.
+  \item Devlin, J. BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding / J. Devlin, M.-W. Chang, K. Lee, K. Toutanova // Proceedings of NAACL-HLT. -- 2019. -- P. 4171--4186.
+  \item Araci, D. FinBERT: Financial Sentiment Analysis with Pre-trained Language Models / D. Araci. -- arXiv:1908.10063, 2019.
+  \item Wu, S. BloombergGPT: A Large Language Model for Finance / S. Wu, O. Irsoy, S. Lu, et al. -- arXiv:2303.17564, 2023.
+  \item Yang, H. FinGPT: Open-Source Financial Large Language Models / H. Yang, X.-Y. Liu, C.D. Wang. -- arXiv:2306.06031, 2023.
+  \item Lewis, P. Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks / P. Lewis, E. Perez, A. Piktus, et al. // Advances in Neural Information Processing Systems. -- 2020. -- Vol. 33. -- P. 9459--9474.
+  \item Yao, S. ReAct: Synergizing Reasoning and Acting in Language Models / S. Yao, J. Zhao, D. Yu, et al. // International Conference on Learning Representations. -- 2023.
+  \item Wu, Q. AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation / Q. Wu, G. Bansal, J. Zhang, et al. -- arXiv:2308.08155, 2023.
+  \item Li, G. CAMEL: Communicative Agents for Mind Exploration of Large Language Model Society / G. Li, H.A.A.K. Hammoud, H. Itani, D. Khizbullin, B. Ghanem. -- arXiv:2303.17760, 2023.
+  \item Park, J.S. Generative Agents: Interactive Simulacra of Human Behavior / J.S. Park, J. O'Brien, C.J. Cai, et al. // Proceedings of UIST. -- 2023.
+  \item Shinn, N. Reflexion: Language Agents with Verbal Reinforcement Learning / N. Shinn, F. Cassano, E. Berman, et al. // Advances in Neural Information Processing Systems. -- 2023.
+  \item Madaan, A. Self-Refine: Iterative Refinement with Self-Feedback / A. Madaan, N. Tandon, P. Gupta, et al. // Advances in Neural Information Processing Systems. -- 2023.
+  \item Wang, G. Voyager: An Open-Ended Embodied Agent with Large Language Models / G. Wang, Y. Xie, Y. Jiang, et al. -- arXiv:2305.16291, 2023.
+  \item Xiao, Y. TradingAgents: Multi-Agents LLM Financial Trading Framework / Y. Xiao, E. Sun, D. Luo, W. Wang. -- arXiv:2412.20138, 2024.
+  \item Liu, X.-Y. FinRL: Deep Reinforcement Learning Framework to Automate Trading in Quantitative Finance / X.-Y. Liu, H. Yang, J. Gao, C.D. Wang // Proceedings of the ACM International Conference on AI in Finance. -- 2021.
+  \item Liu, X.-Y. FinRL: A Deep Reinforcement Learning Library for Automated Stock Trading in Quantitative Finance / X.-Y. Liu, H. Yang, Q. Chen, et al. -- arXiv:2011.09607, 2020.
+  \item Yang, H. Deep Reinforcement Learning for Automated Stock Trading: An Ensemble Strategy / H. Yang, X.-Y. Liu, S. Zhong, A. Walid // Proceedings of the ACM International Conference on AI in Finance. -- 2020.
+  \item Sezer, O.B. Financial Time Series Forecasting with Deep Learning: A Systematic Literature Review: 2005--2019 / O.B. Sezer, M.U. Gudelek, A.M. Ozbayoglu // Applied Soft Computing. -- 2020. -- Vol. 90. -- 106181.
+  \item Ozbayoglu, A.M. Deep Learning for Financial Applications: A Survey / A.M. Ozbayoglu, M.U. Gudelek, O.B. Sezer // Applied Soft Computing. -- 2020. -- Vol. 93. -- 106384.
+  \item Zhang, H. Trading-Agents-OpenClaw: A-share AI investment research system based on TradingAgents and OpenClaw. -- GitHub repository, 2026. -- Available at: \url{https://github.com/zhanghongzhen-sjtu/trading-agents-openclaw}. -- Accessed: 2026-05-19.
+\end{enumerate}\StartAppendixA
+
+\phantomsection
+\addcontentsline{toc}{section}{APPENDIX A}
+\begin{center}
+  \normalfont\normalsize APPENDIX A
+\end{center}
+
+\vspace{1.5\baselineskip}
+
+The project generates the following main experimental artifacts:
+
+\begin{enumerate}[label=\arabic*.]
+  \item \texttt{ablation\_results.json}: cached mechanism-level ablation results.
+  \item \texttt{backtest\_summary\_4stocks.csv}: summarized four-stock backtest metrics.
+  \item \texttt{backtest\_results\_4stocks.csv}: sample-level backtest records.
+  \item \texttt{fig\_paper\_disagreement.png}: disagreement comparison chart.
+  \item \texttt{fig\_paper\_position.png}: suggested position comparison chart.
+  \item \texttt{fig\_paper\_total\_return\_4stocks.png}: total return chart.
+  \item \texttt{fig\_paper\_max\_drawdown\_4stocks.png}: maximum drawdown chart.
+  \item \texttt{fig\_line\_model\_vs\_market\_4stocks.png}: original project line chart.
+\end{enumerate}
+
+
+
+\phantomsection
+\addcontentsline{toc}{section}{APPENDIX B}
+egin{center}
+  
+ormalfont
+ormalsize APPENDIX B
+\end{center}
+
+space{1.5aselineskip}
+
+The core reproduction commands are listed below. They are included to make the engineering workflow explicit.
+
+egin{enumerate}[label=rabic*.]
+  \item Run cached ablation: 	exttt{python run\_ablation\_from\_cache.py}.
+  \item Run four-stock backtest: 	exttt{python run\_backtest.py}.
+  \item Regenerate paper figures: 	exttt{python plot\_paper\_figures.py}.
+  \item Compile the thesis: 	exttt{xelatex 2.tex} twice to refresh the table of contents and references.
+\end{enumerate}
+
+In the current experiment, the backtest file contains 20 samples. The full model records a total return of -0.59\%, a maximum drawdown of 2.01\%, and a Sharpe-like score of -0.037. These values are used in the main text tables and figures.
+
+The appendix is not intended to replace the source code. It only records the minimum reproduction path for the thesis results. For a full reproduction, the user should also keep the cached raw result files and the generated review-memory records.
+
+A complete reproduction should follow three checks. First, the user should verify that the input cache and the backtest CSV files belong to the same analysis period. If the cache is regenerated with a different model or prompt, the ablation table may change. Second, the user should confirm that the plotting script reads the four-stock summary file rather than the earlier single-stock summary file. Third, the PDF should be compiled after the figures are regenerated, because LaTeX only embeds the image files that exist at compile time.
+
+The simplified experiment intentionally avoids broker-level assumptions. It does not model commission, slippage, order book depth, or trading suspension. This choice keeps the experiment focused on the thesis question: whether disagreement-aware control changes position exposure and reduces drawdown in the tested samples. A production trading system would need an additional execution layer and compliance layer.
+
+The following checklist was used before final compilation:
+
+egin{enumerate}[label=rabic*.]
+  \item The thesis text is in English and contains no Chinese body text.
+  \item The weight formulas use explicit non-negative and sum-to-one constraints.
+  \item The line chart uses the original project output rather than the redesigned paper style.
+  \item The reference list contains 24 verifiable sources.
+  \item The PDF is compiled with XeLaTeX after clearing old auxiliary files.
+\end{enumerate}
+
+
+\end{document}

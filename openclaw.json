@@ -171,8 +171,8 @@
       "enabled": false
     },
     "feishu": {
-      "appId": "cli_a9271e3047f85bb6",
-      "appSecret": "zltxJXRWNIhDBhFJaCil9gkwrWNDH5QP",
+      "appId": "cli_aa8918ca16f89bda",
+      "appSecret": "3HBSTn6ZEbsdUErnsrzEafaPVsZQ02oK",
       "enabled": true,
       "groupSessionScope": "group_sender",
       "accounts": {
@@ -185,8 +185,8 @@
           "enabled": true
         },
         "trading": {
-          "appId": "cli_a9271e3047f85bb6",
-          "appSecret": "zltxJXRWNIhDBhFJaCil9gkwrWNDH5QP",
+          "appId": "cli_aa8918ca16f89bda",
+          "appSecret": "3HBSTn6ZEbsdUErnsrzEafaPVsZQ02oK",
           "enabled": true,
           "groupSessionScope": "group_sender"
         }

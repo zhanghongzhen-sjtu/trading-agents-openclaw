@@ -1,10 +1,130 @@
 {
-  "example": {
-    "document_id": "YOUR_DOCUMENT_ID",
-    "url": "https://your-workspace.feishu.cn/docx/YOUR_DOCUMENT_ID",
-    "title": "股票代码 投研分析",
-    "created_at": "2026-01-01T00:00:00.000000",
-    "analysis_count": 0,
-    "analysis_history": []
+  "600519": {
+    "document_id": "LgM1dMvQwoiKaKxV7JLcyFEOnzg",
+    "url": "https://bigdatacenter.feishu.cn/docx/LgM1dMvQwoiKaKxV7JLcyFEOnzg",
+    "title": "600519 投研分析",
+    "created_at": "2026-05-17T20:57:34.604177",
+    "analysis_count": 5,
+    "analysis_history": [
+      {
+        "date": "2026-05-15",
+        "rating": "Underweight",
+        "timestamp": "2026-05-17T20:57:39.416653"
+      },
+      {
+        "date": "2026-05-15",
+        "rating": "Overweight",
+        "timestamp": "2026-05-17T21:09:41.862532"
+      },
+      {
+        "date": "2026-05-15",
+        "rating": "Hold",
+        "timestamp": "2026-05-17T23:27:37.030510"
+      },
+      {
+        "date": "2026-05-15",
+        "rating": "Underweight",
+        "timestamp": "2026-05-18T00:02:22.619144"
+      },
+      {
+        "date": "2026-05-16",
+        "rating": "Underweight",
+        "timestamp": "2026-05-18T01:17:33.371163"
+      }
+    ],
+    "last_analysis": "2026-05-16",
+    "last_rating": "Underweight"
+  },
+  "000630": {
+    "document_id": "Khk1dcrNdo2yZExVublcyDFOnWg",
+    "url": "https://bigdatacenter.feishu.cn/docx/Khk1dcrNdo2yZExVublcyDFOnWg",
+    "title": "000630 投研分析",
+    "created_at": "2026-05-18T01:45:15.072815",
+    "analysis_count": 13,
+    "analysis_history": [
+      {
+        "date": "2026-05-16",
+        "rating": "Hold",
+        "timestamp": "2026-05-18T01:45:19.080183"
+      },
+      {
+        "date": "2026-05-16",
+        "rating": "Underweight",
+        "timestamp": "2026-05-18T01:50:21.619048"
+      },
+      {
+        "date": "2026-05-16",
+        "rating": "Hold",
+        "timestamp": "2026-05-18T03:58:55.180378"
+      },
+      {
+        "date": "2026-05-16",
+        "rating": "Hold",
+        "timestamp": "2026-05-18T04:45:03.718027"
+      },
+      {
+        "date": "2026-05-16",
+        "rating": "Underweight",
+        "timestamp": "2026-05-18T15:27:40.366335"
+      },
+      {
+        "date": "2026-05-16",
+        "rating": "Underweight",
+        "timestamp": "2026-05-18T18:16:51.390596"
+      },
+      {
+        "date": "2026-05-16",
+        "rating": "Underweight",
+        "timestamp": "2026-05-18T18:42:31.129465"
+      },
+      {
+        "date": "2026-05-17",
+        "rating": "Hold",
+        "timestamp": "2026-05-19T00:49:32.151124"
+      },
+      {
+        "date": "2026-05-17",
+        "rating": "Underweight",
+        "timestamp": "2026-05-19T01:06:57.797374"
+      },
+      {
+        "date": "2026-05-17",
+        "rating": "Hold",
+        "timestamp": "2026-05-19T01:26:36.344409"
+      },
+      {
+        "date": "2026-05-17",
+        "rating": "Hold",
+        "timestamp": "2026-05-19T11:13:46.532693"
+      },
+      {
+        "date": "2026-05-17",
+        "rating": "Hold",
+        "timestamp": "2026-05-19T11:43:23.827611"
+      },
+      {
+        "date": "2026-05-17",
+        "rating": "Hold",
+        "timestamp": "2026-05-19T12:20:56.902532"
+      }
+    ],
+    "last_analysis": "2026-05-17",
+    "last_rating": "Hold"
+  },
+  "605499": {
+    "document_id": "YLkXdQZMqouyn6xBYtccGqGnnYd",
+    "url": "https://bigdatacenter.feishu.cn/docx/YLkXdQZMqouyn6xBYtccGqGnnYd",
+    "title": "605499 投研分析",
+    "created_at": "2026-05-18T02:10:42.537432",
+    "analysis_count": 1,
+    "analysis_history": [
+      {
+        "date": "2026-05-16",
+        "rating": "Underweight",
+        "timestamp": "2026-05-18T02:10:46.550817"
+      }
+    ],
+    "last_analysis": "2026-05-16",
+    "last_rating": "Underweight"
   }
 }

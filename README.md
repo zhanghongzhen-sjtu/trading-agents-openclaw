@@ -1,350 +1,591 @@
-# TradingAgents OpenClaw Edition
+# Trading-Agents-OpenClaw：面向金融不确定性的多智能体投研决策系统
 
-A股 AI 投研分析系统 — 集成东方财富妙想数据源 + TradingAgents 多智能体框架。
+本项目基于 [`trading-agents-openclaw`](https://github.com/DWLng/trading-agents-openclaw) 进行二次开发，面向金融投研场景中常见的多源信息冲突、智能体观点分歧、证据可信度不一致和决策风险暴露问题，构建了一个带有 **不确定性诊断、风险自适应决策、证据可信度加权和复盘记忆校准** 的多智能体金融决策系统。
 
-支持四大核心能力：
-1. **每日自主选股**（mx-xuangu 多因子筛选 → LLM 研判 → mx-moni 模拟建仓 → 推送飞书）
-2. **个股深度分析**（13维度深度分析 + HTML专业报告）
-3. **每日复盘进化**（Dreaming自动处理认知偏见）
-4. **盘中持仓监控**（心跳机制实时预警）
+原始项目能够完成股票的技术面、基本面、新闻面、情绪面、多空辩论和交易计划生成。本项目在此基础上进一步增加了三个核心创新模块：
 
-数据源优先级：妙想 mx-skills（东方财富）→ AkShare → yfinance
+1. **分歧感知的多智能体金融决策机制**
+2. **证据可信度加权 RAG 机制**
+3. **复盘记忆驱动的自我校准机制**
 
-## OpenClaw Agent 配置说明
+系统最终可以生成飞书投研文档，并输出：
 
-本仓库包含完整的 OpenClaw Agent 配置，是投研 Agent 的"大脑"。核心文件：
+- 综合分歧指数
+- 主要分歧类型
+- 证据可信度
+- 冲突证据
+- 风险自适应建议
+- 建议仓位
+- 复盘记忆更新结果
+- 消融实验与回测验证结果
 
-| 文件 | 作用 |
-|------|------|
-| `SOUL.md` | 认知核心：三大准则（证据优先、概率思维、认知谦逊）、张力仲裁、风险节奏 |
-| `USER.md` | 用户画像：高风险偏好、纯右侧交易、超短线（1-3天持有） |
-| `IDENTITY.md` | 身份矩阵：六大面具（猎人/解剖师/会计/战略家/守夜人/学徒） |
-| `AGENTS.md` | 操作手册：四大能力 + 双引擎数据系统 + Cloudflare Pages部署 |
-| `TOOLS.md` | 工具调用：MX Skills（东方财富）+ 文财 Skills 双引擎 |
-| `HEARTBEAT.md` | 心跳调度：六任务优先级矩阵（选股/复盘/监控/维护/简报） |
-| `BOOTSTRAP.md` | 启动协议：五大意图类型识别 + Dreaming状态查询 |
-| `METACOGNITION.md` | 元认知：五种认知状态（现由OpenClaw Dreaming自动处理） |
-| `ADAPTIVE_CONSTRAINTS.md` | 自适应约束：五级约束谱系（严格↔宽松） |
-| `FAILURE_PROTOCOL.md` | 故障协议：四级故障体系、双引擎降级链 |
+---
 
-完整分析流程参考：
-- `agent/references/deep-dive-workflow.md`（十三维度深度分析框架）
-- `agent/references/super-deep-research-workflow.md`（超级深度调研六段式框架）
-- `agent/references/analysis-method.md`（六维快速分析 + System 2思考）
+## 1. 项目主要改进
 
-## 系统架构
+### 1.1 分歧感知的多智能体金融决策机制
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    TradingAgents 分析框架                      │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │ Market       │  │ Social       │  │ News         │      │
-│  │ Analyst      │  │ Analyst      │  │ Analyst      │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-│  ┌──────────────┐  ┌──────────────┐                         │
-│  │ Fundamentals │  │ Bull/Bear    │──▶ Research Manager     │
-│  │ Analyst      │  │ Researcher   │                         │
-│  └──────────────┘  └──────────────┘                         │
-│                              │                               │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │ Risk (×3)    │  │ Trader       │  │ Portfolio    │      │
-│  │ Management   │  │              │  │ Manager      │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    妙想 MX Skills 数据层                      │
-│  ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐│
-│  │mx-data │  │mx-search│ │mx-xuangu│ │mx-zixuan│ │mx-moni││
-│  │ 行情/财务 │  │ 资讯搜索 │  │ 智能选股  │  │ 自选管理  │  │ 模拟交易 ││
-│  └────────┘  └────────┘  └────────┘  └────────┘  └────────┘│
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    飞书文档输出层                             │
-│           投研报告自动生成/更新到飞书文档                      │
-└─────────────────────────────────────────────────────────────┘
+原始 TradingAgents 流程中，不同分析智能体会分别给出技术面、基本面、新闻面、情绪面和交易建议，但系统没有显式量化智能体之间的分歧。
+
+本项目新增 `uncertainty/disagreement.py`，将不同智能体的输出结构化为 `AgentOutput`，并从以下五个维度计算多智能体分歧：
+
+- **方向分歧**：不同智能体对买入、持有、卖出的判断差异
+- **置信度分歧**：不同智能体信心程度差异
+- **证据分歧**：不同证据源之间的看多、看空、中性冲突
+- **风险分歧**：不同智能体对风险暴露的判断差异
+- **时间尺度分歧**：短期、中期、长期判断不一致
+
+最终形成综合分歧指数：
+
+```text
+D = λ1Ddirection + λ2Dconfidence + λ3Devidence + λ4Drisk + λ5Dhorizon
 ```
 
-## 目录结构
+该分歧指数会进一步影响最终仓位和风险控制策略。
 
-```
-trading-agents-openclaw/
-├── agent/                      # OpenClaw Agent 配置（核心认知层）
-│   ├── SOUL.md                 # 认知核心：三大准则、张力仲裁、风险节奏
-│   ├── USER.md                 # 用户画像：高风险偏好、右侧交易、超短线
-│   ├── IDENTITY.md             # 身份矩阵：六大面具、四层认知
-│   ├── AGENTS.md               # 操作手册：四大能力、双引擎数据系统
-│   ├── TOOLS.md                # 工具调用指南：MX Skills + 文财 Skills
-│   ├── HEARTBEAT.md            # 心跳调度：六任务优先级矩阵
-│   ├── BOOTSTRAP.md            # 启动协议：五大意图识别、Dreaming状态
-│   ├── METACOGNITION.md        # 元认知：五种认知状态
-│   ├── ADAPTIVE_CONSTRAINTS.md # 自适应约束：五级约束谱系
-│   ├── FAILURE_PROTOCOL.md     # 故障协议：四级故障体系、双引擎降级
-│   ├── memory/                 # Agent 记忆存储
-│   │   └── README.md          # 记忆文件说明
-│   ├── skills/                 # Agent 专属 Skills
-│   │   ├── report-generator/   # Jinja2 HTML报告生成器
-│   │   │   ├── template.html   # 专业HTML模板（Tailwind+ECharts）
-│   │   │   ├── report_generator.py
-│   │   │   └── SKILL.md
-│   │   ├── cf-upload/         # Cloudflare Pages部署
-│   │   │   ├── cf_pages_deploy.py
-│   │   │   └── SKILL.md
-│   │   ├── oss-upload/         # 阿里云OSS上传（已废弃）
-│   │   │   ├── oss_upload.py
-│   │   │   └── SKILL.md
-│   │   └── feishu-doc.sh       # 飞书文档推送脚本
-│   └── references/
-│       ├── analysis-method.md      # 六维快速分析 + System 2思考
-│       ├── deep-dive-workflow.md   # 十三维度深度分析框架
-│       └── super-deep-research-workflow.md  # 超级深度调研框架
-├── scripts/                   # 本地数据管理脚本
-│   ├── bulk_download.py       # A股历史数据批量下载（baostock）
-│   ├── daily_update.py        # 每日增量更新（收盘后）
-│   ├── incremental_update.py  # 增量更新脚本
-│   ├── local_data_loader.py   # 本地数据加载器
-│   └── query_local.py         # 本地数据查询
-├── data/                      # 本地数据存储
-│   └── README.md              # 数据初始化说明
-├── reports/                   # 投研报告输出
-│   └── README.md              # 报告格式说明
-├── skills-lock.json           # Skill 版本锁定
-├── trading-agents/           # TradingAgents 核心分析
-│   ├── SKILL.md              # Skill 配置说明
-│   ├── scripts/
-│   │   ├── run_analysis.py   # 主执行脚本
-│   │   ├── mx_integration.py # 妙想数据集成
-│   │   ├── feishu_doc_client.py    # 飞书文档 API
-│   │   ├── feishu_doc_manager.py   # 文档管理器
-│   │   └── report_generator.py     # 报告生成器
-│   └── data/
-│       └── doc_registry.json       # 股票-文档映射
-├── mx-skills/                # 妙想 Skills
-│   ├── mx-data/              # 行情/财务数据查询
-│   │   ├── SKILL.md
-│   │   └── mx_data.py
-│   ├── mx-search/            # 资讯/新闻搜索
-│   │   ├── SKILL.md
-│   │   └── mx_search.py
-│   ├── mx-xuangu/            # 智能选股
-│   │   ├── SKILL.md
-│   │   └── mx_xuangu.py
-│   ├── mx-zixuan/            # 自选股管理
-│   │   ├── SKILL.md
-│   │   └── mx_zixuan.py
-│   ├── mx-moni/              # 模拟交易
-│   │   ├── SKILL.md
-│   │   └── mx_moni.py
-│   └── mx-run.sh             # 统一调用 wrapper
-├── openclaw.json             # OpenClaw 全局配置（心跳/cron/模型）
-├── .env.example              # 环境变量模板（已脱敏）
-├── CHANGELOG.md              # 更新日志
-├── .gitignore               # Git 忽略配置
-└── README.md
+---
+
+### 1.2 风险自适应决策机制
+
+新增 `uncertainty/adaptive_decision.py`，根据综合分歧指数和主要分歧类型，动态调整最终交易建议和仓位。
+
+当多智能体之间出现较高分歧时，系统不会直接给出激进交易建议，而是通过风险惩罚参数降低仓位暴露。
+
+示例：
+
+```text
+综合分歧指数：0.466
+主要分歧类型：direction
+风险自适应建议：buy
+建议仓位：20.57%
 ```
 
-## 环境准备
+在缓存版消融实验中，关闭分歧诊断后，系统无法识别智能体冲突，仓位上升：
 
-### 1. 安装 TradingAgents
-
-```bash
-git clone https://github.com/TauricResearch/TradingAgents.git ~/TradingAgents-Kimi
-cd ~/TradingAgents-Kimi
-pip install -e .
+```text
+Ours-full：建议仓位 20.57%
+w/o DADM：建议仓位 30.00%
 ```
 
-### 2. 配置环境变量
+这说明分歧诊断机制能够在高不确定性场景下抑制过度仓位暴露。
 
-复制 `.env.example` 为 `.env` 并填入实际值：
+---
 
-```bash
-cp .env.example .env
-# 编辑 .env 填入你的 API Keys
+### 1.3 证据可信度加权 RAG
+
+新增 `uncertainty/evidence.py`，将 TradingAgents 产生的报告进一步结构化为证据对象 `Evidence`。
+
+每条证据包含：
+
+```text
+evidence_id
+source
+evidence_type
+stance
+credibility_score
+conflict_ids
 ```
 
-主要必需配置：
-| 变量 | 说明 |
-|------|------|
-| `MINIMAX_API_KEY` | MiniMax API Key（TradingAgents LLM驱动） |
-| `DEEPSEEK_API_KEY` | DeepSeek API Key（可选） |
-| `MX_APIKEY` | 东方财富妙想 API Key |
-| `FEISHU_APP_ID` | 飞书应用 App ID |
-| `FEISHU_APP_SECRET` | 飞书应用 App Secret |
+系统从以下因素综合计算证据可信度：
 
-### 3. 安装依赖
+- 来源权威性
+- 证据类型可靠性
+- 文本质量
+- 跨源一致性
+- 历史可靠性
 
-```bash
-pip install pandas requests openpyxl jinja2
-npm install -g wrangler  # Cloudflare Pages部署用
+示例输出：
+
+```text
+证据可信度明细：
+• market_report：方向 看空，可信度 0.762
+• fundamentals_report：方向 中性，可信度 0.827
+• sentiment_report：方向 看空，可信度 0.543
+• news_report：方向 看多，可信度 0.495
+• final_trade_decision：方向 看空，可信度 0.802
 ```
 
-## 快速开始
+系统还会检测冲突证据，例如：
 
-### 方式一：使用 MX Skills（推荐）
-
-```bash
-# 设置 API Key
-export MX_APIKEY="your_mx_apikey_here"
-
-# 选股示例
-cd mx-skills
-python mx-xuangu/mx_xuangu.py "ROE大于15% 市盈率小于30 净利润增长率大于20%"
-
-# 数据查询示例
-python mx-data/mx_data.py "贵州茅台最新价 涨跌幅 市盈率"
-
-# 资讯搜索示例
-python mx-search/mx_search.py "贵州茅台最新研报"
+```text
+market_report 与 news_report 冲突
+sentiment_report 与 news_report 冲突
+final_trade_decision 与 news_report 冲突
 ```
 
-### 方式二：使用 TradingAgents 深度分析
+该机制用于提升系统对多源金融信息的可信度建模能力。
 
-```bash
-# 设置环境变量
-export MX_APIKEY="your_mx_apikey_here"
-export MINIMAX_API_KEY="your_minimax_key"
-export TRADINGAGENTS_PROJECT="$HOME/TradingAgents-Kimi"
+---
 
-# 执行分析
-cd trading-agents/scripts
-python run_analysis.py --ticker 贵州茅台 --date 2026-05-06 --market cn
+### 1.4 复盘记忆驱动的自我校准机制
+
+新增 `uncertainty/review_memory.py` 和 `review_update.py`，实现复盘记忆功能。
+
+系统每次分析后，会将以下内容写入：
+
+```text
+data/review_memory.json
 ```
 
-### 方式三：使用 Wrapper 脚本
+包括：
 
-```bash
-# 设置环境变量
-export MX_APIKEY="your_mx_apikey_here"
+- 股票代码
+- 分析日期
+- 综合分歧指数
+- 主要分歧类型
+- 最终动作
+- 建议仓位
+- 证据可信度
+- 智能体输出
 
-# 统一调用接口
-bash mx-skills/mx-run.sh xuangu "今日涨幅大于2%的A股"
-bash mx-skills/mx-run.sh data "贵州茅台最新价"
-bash mx-skills/mx-run.sh search "宁德时代最新研报"
+后续可以通过真实收益反馈更新系统参数：
+
+```powershell
+python review_update.py --ticker 000630 --return-rate -0.05 --max-drawdown 0.08
 ```
 
-## 输出模式
+复盘更新会调整：
 
-```bash
-# 飞书文档模式（默认）：生成专业投研报告
-python run_analysis.py --ticker 贵州茅台 --output-mode feishu-doc
+- 分歧惩罚参数
+- 证据源可信度
+- 证据类型可信度
+- 智能体权重
 
-# 飞书消息模式：直接发送 Markdown 摘要
-python run_analysis.py --ticker 贵州茅台 --output-mode feishu-msg
+从而实现：
 
-# HTML报告模式：生成专业HTML报告并上传Cloudflare Pages
-python run_analysis.py --ticker 贵州茅台 --output-mode html
-
-# JSON 模式：获取结构化数据
-python run_analysis.py --ticker 贵州茅台 --output-mode json
-
-# 原始文本模式：仅最终决策
-python run_analysis.py --ticker 贵州茅台 --output-mode raw
+```text
+历史复盘结果 → 参数校准 → 影响下一次证据评分和仓位控制
 ```
 
-### HTML报告特性
+---
 
-生成的HTML报告包含：
-- **Tailwind CSS v4** - 专业响应式设计
-- **ECharts 5** - 交互式图表（K线、成交量、MACD等）
-- **左侧导航栏** - 快速跳转各分析章节
-- **卡片式Dashboard** - 核心指标一目了然
-- **条件渲染** - 高分警告、风险提示自动显示
-- **东方财富K线图** - 直接嵌入实时行情
+## 2. 新增代码结构
 
-### Cloudflare Pages部署
-
-```bash
-# 初始化Cloudflare Pages项目
-npx wrangler pages project create trading-reports
-
-# 配置API Token（用于CI/CD）
-# 从 https://dash.cloudflare.com/profile/api-tokens 获取
-
-# 部署HTML报告
-python3 agent/skills/cf-upload/cf_pages_deploy.py <html文件>
+```text
+trading-agents/scripts/
+├── run_analysis.py                 # 主分析入口，集成不确定性增强层
+├── report_generator.py             # 飞书报告生成器，新增不确定性诊断展示
+├── review_update.py                # 复盘记忆更新脚本
+├── run_backtest.py                 # 多模式回测验证脚本
+├── run_ablation_from_cache.py      # 基于缓存的严格消融实验脚本
+├── plot_backtest.py                # 回测结果图表生成脚本
+├── plot_ablation.py                # 消融结果图表生成脚本
+├── uncertainty/
+│   ├── __init__.py
+│   ├── disagreement.py             # 多维分歧诊断
+│   ├── adaptive_decision.py        # 风险自适应决策
+│   ├── evidence.py                 # 证据可信度加权
+│   └── review_memory.py            # 复盘记忆自我校准
+└── validation/
+    ├── __init__.py
+    └── price_loader.py             # 真实历史价格收益获取
 ```
 
-## MX Skills 详解
+---
 
-| Skill | 功能 | 数据源 |
-|-------|------|--------|
-| mx-data | 行情/财务/资金流数据 | 东方财富 |
-| mx-search | 研报/新闻/公告搜索 | 东方财富 |
-| mx-xuangu | 多因子条件选股 | 东方财富 |
-| mx-zixuan | 自选股管理 | 东方财富 |
-| mx-moni | 模拟买卖/持仓查询 | 东方财富 |
+## 3. 环境准备
 
-## 配置说明
+进入项目目录后，建议先激活虚拟环境：
 
-### 环境变量
+```powershell
+cd C:\Users\31231\OneDrive\Desktop\学习\trading-agents-openclaw
+.\.venv\Scripts\Activate.ps1
+```
 
-详细配置请参考 `.env.example`，主要变量：
+进入脚本目录：
 
-| 变量 | 必填 | 说明 |
-|------|------|------|
-| `MX_APIKEY` | 是 | 东方财富妙想 API Key |
-| `MINIMAX_API_KEY` | 是 | MiniMax API Key（TradingAgents 用） |
-| `DEEPSEEK_API_KEY` | 否 | DeepSeek API Key |
-| `FEISHU_APP_ID` | 是 | 飞书应用 App ID |
-| `FEISHU_APP_SECRET` | 是 | 飞书应用 App Secret |
-| `CF_API_TOKEN` | 否 | Cloudflare API Token（HTML部署用） |
-| `OSS_ACCESS_KEY_ID` | 否 | 阿里云OSS AccessKey（已废弃） |
+```powershell
+cd trading-agents\scripts
+```
 
-### 飞书集成
+如果需要真实历史价格收益验证，需要安装：
 
-本系统需要配置飞书应用以支持文档输出。配置方法：
+```powershell
+pip install yfinance
+```
 
-1. 在[飞书开放平台](https://open.feishu.cn/)创建应用
-2. 获取 `App ID` 和 `App Secret`
-3. 填入 `.env` 文件
+如果需要生成图表，需要安装：
 
-### Heartbeat心跳机制
+```powershell
+pip install matplotlib
+```
 
-Agent默认每30分钟心跳一次，活跃时段9:30-20:00。可用命令：
+如果安装较慢，可以使用清华源：
 
-| 命令 | 说明 |
-|------|------|
-| `Dreaming状态` | 查询Dreaming记忆整理状态 |
-| `今天选什么股` | 立即执行选股 |
-| `分析 XXX` | 深度分析个股 |
-| `我的持仓` | 查询模拟持仓 |
+```powershell
+pip install yfinance matplotlib -i https://pypi.tuna.tsinghua.edu.cn/simple
+```
 
-## 定时任务（Cron Jobs）
+---
 
-Agent自动执行以下定时任务：
+## 4. 快速开始
 
-| 任务 | 触发时间 | 说明 |
-|------|---------|------|
-| 早间简报 | 07:30 | 财经简报，覆盖前日23:30至当日07:30 |
-| 午间简报 | 12:00 | 上午市场走势简报 |
-| 下午简报 | 15:15 | 午盘交易时段简报 |
-| 收盘选股 | 15:30 | 四维度筛选优质股票 |
-| 每日复盘 | 16:00 | 对比持仓表现与选股推荐 |
-| 晚间简报 | 23:45 | 全球市场动态综述 |
-| 记忆Dreaming | 03:00 | 自动记忆整理和沉淀 |
+### 4.1 运行完整模型并生成飞书文档
 
-## 成本控制
+```powershell
+python run_analysis.py --ticker 000630 --market cn --output-mode feishu-doc --skip-mx --timeout 1200 --retries 0
+```
 
-## 故障排查
+成功后终端会输出飞书文档链接：
 
-| 问题 | 解决 |
-|------|------|
-| "MX_APIKEY not set" | 设置环境变量 `export MX_APIKEY=your_key` |
-| mx-skills 调用失败 | 检查 MX_APIKEY 是否正确 |
-| mx-moni "未绑定模拟账户" | 前往妙想 Skills 页面创建并绑定模拟账户 |
-| mx-xuangu 结果为空 | 放宽筛选条件 |
-| TradingAgents 超时 | 使用后台模式，减少 debate 轮次 |
-| 飞书消息太长 | 改用 feishu-doc 模式 |
+```text
+📄 飞书文档已生成/更新：https://...
+```
 
-## 免责声明
+---
 
-- 本系统**仅用于研究目的**，不构成投资建议
-- 模拟交易 only，不涉及真实资金
-- API Key 通过环境变量管理，不硬编码
+### 4.2 输出飞书消息格式
 
-## License
+```powershell
+python run_analysis.py --ticker 000630 --market cn --output-mode feishu-msg --skip-mx --timeout 1200 --retries 0
+```
 
-MIT
+---
+
+### 4.3 输出 JSON
+
+```powershell
+python run_analysis.py --ticker 000630 --market cn --output-mode json --skip-mx --timeout 1200 --retries 0
+```
+
+---
+
+## 5. 输出模式说明
+
+`run_analysis.py` 支持多种输出模式：
+
+```text
+feishu-doc：生成或更新飞书文档
+feishu-msg：输出飞书消息格式摘要
+json：输出完整 JSON，适合程序读取
+raw：只输出最终交易决策
+```
+
+示例：
+
+```powershell
+python run_analysis.py --ticker 000630 --market cn --output-mode feishu-msg --skip-mx --timeout 1200 --retries 0
+```
+
+---
+
+## 6. 消融实验
+
+为了验证不同模块的作用，系统支持以下消融开关。
+
+### 6.1 完整模型 Ours-full
+
+```powershell
+python run_analysis.py --ticker 000630 --market cn --output-mode feishu-doc --skip-mx --timeout 1200 --retries 0
+```
+
+### 6.2 去掉证据可信度加权 Ours-w/o CW-RAG
+
+```powershell
+python run_analysis.py --ticker 000630 --market cn --output-mode feishu-doc --skip-mx --timeout 1200 --retries 0 --disable-evidence-weight
+```
+
+### 6.3 去掉分歧诊断 Ours-w/o DADM
+
+```powershell
+python run_analysis.py --ticker 000630 --market cn --output-mode feishu-doc --skip-mx --timeout 1200 --retries 0 --disable-disagreement
+```
+
+### 6.4 去掉复盘记忆 Ours-w/o RMSE
+
+```powershell
+python run_analysis.py --ticker 000630 --market cn --output-mode feishu-doc --skip-mx --timeout 1200 --retries 0 --disable-review-memory
+```
+
+---
+
+## 7. 基于缓存的严格消融实验
+
+直接重复运行四个模型会导致 TradingAgents 底层大模型输出波动。为了更严格控制变量，本项目新增缓存版消融实验脚本：
+
+```text
+run_ablation_from_cache.py
+```
+
+该脚本只运行一次 TradingAgents 原始分析，然后在同一份 `raw_result` 上分别运行四种不确定性配置。
+
+### 7.1 首次运行并生成缓存
+
+```powershell
+python run_ablation_from_cache.py --ticker 000630 --market cn --date 2026-05-15 --holding-days 5 --allow-short
+```
+
+### 7.2 使用缓存快速复现实验
+
+```powershell
+python run_ablation_from_cache.py --ticker 000630 --market cn --date 2026-05-15 --holding-days 5 --allow-short --use-cache
+```
+
+缓存文件保存在：
+
+```text
+data/ablation_cache/
+```
+
+示例输出：
+
+```text
+📦 使用缓存 raw_result: data\ablation_cache\000630_cn_2026-05-15_raw_result.json
+真实持有期收益: 000630 | 2026-05-15 | 5日 | -3.22%
+🧪 运行消融配置: ours-full
+🧪 运行消融配置: wo-cw-rag
+🧪 运行消融配置: wo-dadm
+🧪 运行消融配置: wo-rmse
+✅ 缓存版消融实验完成
+```
+
+---
+
+## 8. 真实收益验证
+
+项目支持使用历史价格计算真实持有期收益率。价格数据由 `validation/price_loader.py` 通过 `yfinance` 获取。
+
+安装依赖：
+
+```powershell
+pip install yfinance
+```
+
+真实 5 日持有期收益验证示例：
+
+```powershell
+python run_ablation_from_cache.py --ticker 000630 --market cn --date 2026-05-15 --holding-days 5 --allow-short --use-cache
+```
+
+示例结果：
+
+```text
+真实持有期收益: 000630 | 2026-05-15 | 5日 | -3.22%
+
+ours-full: action=buy, position=20.57%, strategy_return=-0.66%, disagreement=0.466, avg_credibility=0.673
+wo-cw-rag: action=buy, position=20.42%, strategy_return=-0.66%, disagreement=0.473, avg_credibility=0.770
+wo-dadm: action=buy, position=30.00%, strategy_return=-0.96%, disagreement=0.000, avg_credibility=0.673
+wo-rmse: action=buy, position=21.63%, strategy_return=-0.70%, disagreement=0.465, avg_credibility=0.635
+```
+
+该结果说明，在真实下跌区间中，关闭分歧诊断后模型仓位上升至 30%，导致亏损扩大。完整模型通过分歧感知降低仓位，从而降低下跌风险暴露。
+
+---
+
+## 9. 普通回测脚本
+
+除了缓存版消融实验，也可以使用 `run_backtest.py` 进行多模式回测。
+
+### 9.1 手动指定持有期收益
+
+```powershell
+python run_backtest.py --tickers 000630 --market cn --dates 2026-05-15 --holding-return -0.05 --allow-short
+```
+
+### 9.2 使用真实历史价格收益
+
+```powershell
+python run_backtest.py --tickers 000630 --market cn --dates 2026-05-15 --holding-days 5 --allow-short
+```
+
+### 9.3 多日期验证
+
+```powershell
+python run_backtest.py --tickers 000630 --market cn --dates 2026-04-15 2026-04-22 2026-04-29 2026-05-06 2026-05-15 --holding-days 5 --allow-short
+```
+
+输出文件：
+
+```text
+data/backtest_results.csv
+data/backtest_summary.csv
+```
+
+---
+
+## 10. 图表生成
+
+回测或消融实验完成后，可以生成图表：
+
+```powershell
+copy data\ablation_cache\000630_cn_2026-05-15_ablation_results.csv data\backtest_results.csv
+python plot_backtest.py
+```
+
+生成图表：
+
+```text
+data/fig_disagreement.png
+data/fig_position.png
+data/fig_strategy_return.png
+data/fig_evidence_disagreement.png
+data/fig_risk_disagreement.png
+```
+
+推荐用于论文展示的图：
+
+```text
+图 5-1 不同模型综合分歧指数对比
+图 5-2 不同模型建议仓位对比
+图 5-3 单案例模拟策略收益对比
+```
+
+---
+
+## 11. 复盘记忆更新
+
+当获得某只股票后续真实收益后，可以更新复盘记忆：
+
+```powershell
+python review_update.py --ticker 000630 --return-rate -0.05 --max-drawdown 0.08
+```
+
+输出示例：
+
+```text
+✅ 复盘记忆已更新
+股票：000630
+后续收益率：-5.00%
+最大回撤：8.00%
+
+分歧惩罚参数更新：
+- 分歧类型：direction
+- 旧参数：0.625
+- 新参数：0.650
+- 原因：最大回撤较高，提高风险惩罚
+
+证据可信度更新：
+- market_report | source 0.750 → 0.710 | type 0.750 → 0.710
+
+智能体权重更新：
+- Market Analyst | 0.700 → 0.740
+```
+
+---
+
+## 12. 飞书文档新增展示内容
+
+飞书报告中新增“不确定性诊断与风险自适应决策”章节，包含：
+
+```text
+综合分歧指数
+主要分歧类型
+触发控制动作
+风险自适应建议
+建议仓位
+风险等级
+
+分歧来源明细：
+方向分歧
+置信度分歧
+证据分歧
+风险分歧
+时间尺度分歧
+
+证据可信度明细：
+market_report
+fundamentals_report
+sentiment_report
+news_report
+final_trade_decision
+```
+
+示例：
+
+```text
+综合分歧指数：0.466
+主要分歧类型：direction
+风险自适应建议：买入
+建议仓位：20.57%
+
+分歧来源明细：
+• 方向分歧：0.965
+• 证据分歧：0.366
+• 风险分歧：0.250
+```
+
+---
+
+## 13. 实验结果示例
+
+基于缓存控制变量的消融实验结果如下：
+
+| 模型 | 综合分歧指数 | 建议仓位 | 策略收益 | 平均证据可信度 |
+|---|---:|---:|---:|---:|
+| Ours-full | 0.466 | 20.57% | -0.66% | 0.673 |
+| Ours-w/o CW-RAG | 0.473 | 20.42% | -0.66% | 0.770 |
+| Ours-w/o DADM | 0.000 | 30.00% | -0.96% | 0.673 |
+| Ours-w/o RMSE | 0.465 | 21.63% | -0.70% | 0.635 |
+
+实验结论：
+
+- 关闭分歧诊断后，综合分歧指数被置为 0，系统无法感知智能体冲突。
+- 关闭分歧诊断后，建议仓位上升至 30%，风险暴露显著提高。
+- 在真实 5 日收益为 -3.22% 的下跌区间中，w/o DADM 亏损扩大至 -0.96%。
+- 完整模型通过分歧感知和复盘记忆校准，将仓位控制在 20.57%，亏损相对更小。
+
+---
+
+## 14. 注意事项
+
+### 14.1 不要提交本地敏感文件
+
+以下文件或目录不应提交到 GitHub：
+
+```text
+openclaw.json
+data/
+log.txt
+.venv-wsl/
+TradingAgents-Kimi/
+```
+
+尤其是：
+
+```text
+openclaw.json
+```
+
+其中可能包含 API Key。
+
+### 14.2 JSON 输出编码
+
+Windows PowerShell 默认编码可能导致 emoji 输出失败。因此本项目在 `json` 模式下使用：
+
+```python
+json.dumps(result, ensure_ascii=True, indent=2)
+```
+
+以保证回测脚本稳定读取。
+
+### 14.3 消融实验建议使用缓存版
+
+为了避免大语言模型生成波动影响结果，建议正式实验使用：
+
+```text
+run_ablation_from_cache.py
+```
+
+而不是重复运行四次 `run_analysis.py`。
+
+---
+
+## 15. 项目链接
+
+本项目二次开发仓库：
+
+```text
+https://github.com/zhanghongzhen-sjtu/trading-agents-openclaw
+```
+
+原始项目：
+
+```text
+https://github.com/DWLng/trading-agents-openclaw
+```
+
+---
+
+## 16. 免责声明
+
+本项目仅用于学术研究和金融智能体系统实验，不构成任何投资建议。股票分析结果、交易方向和建议仓位仅供研究参考，实际投资应结合个人风险承受能力和专业判断。

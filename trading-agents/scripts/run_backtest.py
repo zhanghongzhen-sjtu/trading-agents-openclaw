@@ -41,6 +41,11 @@ def parse_args():
     parser.add_argument("--dates", nargs="+", required=True, help="回测日期列表，例如 2026-05-01 2026-05-08")
     parser.add_argument("--holding-return", type=float, default=None, help="手动指定持有期收益率，例如 -0.05")
     parser.add_argument("--holding-days", type=int, default=5, help="自动计算真实收益时的持有期交易日数量，默认5")
+    parser.add_argument(
+        "--market-benchmark",
+        default="000300.SS",
+        help="大盘基准代码，默认沪深300：000300.SS"
+    )
     parser.add_argument("--allow-short", action="store_true", help="允许卖出信号按做空收益计算")
     parser.add_argument("--timeout", type=int, default=1200, help="单次分析超时时间")
     return parser.parse_args()
@@ -149,7 +154,8 @@ def summarize(rows):
 
     for mode in MODES:
         mode_returns = [r["strategy_return"] for r in rows if r["mode"] == mode]
-
+        mode_excess_stock = [r["excess_vs_stock"] for r in rows if r["mode"] == mode]
+        mode_excess_market = [r["excess_vs_market"] for r in rows if r["mode"] == mode]
         if not mode_returns:
             continue
 
@@ -173,6 +179,8 @@ def summarize(rows):
             "sharpe_like": sharpe,
             "win_rate": win_rate,
             "max_drawdown": mdd,
+            "avg_excess_vs_stock": mean(mode_excess_stock) if mode_excess_stock else 0.0,
+            "avg_excess_vs_market": mean(mode_excess_market) if mode_excess_market else 0.0,
         })
 
     return summary
@@ -198,6 +206,7 @@ def main():
     for ticker in args.tickers:
         for date in args.dates:
 
+            # 1. 计算个股持有期收益
             if args.holding_return is not None:
                 holding_return = args.holding_return
                 print(
@@ -220,6 +229,26 @@ def main():
                     file=sys.stderr
                 )
 
+            # 2. 计算大盘基准收益
+            market_benchmark_return = get_holding_return_yfinance(
+                ticker=args.market_benchmark,
+                date=date,
+                holding_days=args.holding_days,
+            )
+
+            if market_benchmark_return is None:
+                print(
+                    f"⚠️ 无法获取大盘基准 {args.market_benchmark} {date} 的收益，设为0",
+                    file=sys.stderr
+                )
+                market_benchmark_return = 0.0
+
+            print(
+                f"大盘基准收益: {args.market_benchmark} | {date} | {args.holding_days}日 | {market_benchmark_return:.2%}",
+                file=sys.stderr
+            )
+
+            # 3. 运行四种消融模型
             for mode_name, mode_args in MODES.items():
                 result = run_analysis(
                     ticker=ticker,
@@ -250,8 +279,17 @@ def main():
                     "mode": mode_name,
                     "action": action,
                     "position": position,
+
+                    "stock_return": holding_return,
+                    "market_benchmark": args.market_benchmark,
+                    "market_benchmark_return": market_benchmark_return,
+
                     "holding_return": holding_return,
                     "strategy_return": strategy_return,
+
+                    "excess_vs_stock": strategy_return - holding_return,
+                    "excess_vs_market": strategy_return - market_benchmark_return,
+
                     "disagreement_total": disagreement.get("total", 0),
                     "evidence_disagreement": disagreement.get("evidence", 0),
                     "risk_disagreement": disagreement.get("risk", 0),
@@ -273,9 +311,10 @@ def main():
             f"累计收益={item['total_return']:.2%}, "
             f"最大回撤={item['max_drawdown']:.2%}, "
             f"胜率={item['win_rate']:.2%}, "
-            f"Sharpe-like={item['sharpe_like']:.3f}"
+            f"Sharpe-like={item['sharpe_like']:.3f}, "
+            f"相对个股超额={item['avg_excess_vs_stock']:.2%}, "
+            f"相对大盘超额={item['avg_excess_vs_market']:.2%}"
         )
-
 
 if __name__ == "__main__":
     main()
