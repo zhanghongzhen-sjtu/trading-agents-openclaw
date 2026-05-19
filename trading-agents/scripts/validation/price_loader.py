@@ -33,7 +33,7 @@ def get_holding_return_yfinance(
     yf_ticker = normalize_cn_ticker(ticker)
 
     start_dt = datetime.strptime(date, "%Y-%m-%d")
-    end_dt = start_dt + timedelta(days=holding_days + 10)
+    end_dt = start_dt + timedelta(days=holding_days + 15)
 
     df = yf.download(
         yf_ticker,
@@ -41,19 +41,36 @@ def get_holding_return_yfinance(
         end=end_dt.strftime("%Y-%m-%d"),
         progress=False,
         auto_adjust=True,
+        group_by="column",
     )
 
     if df is None or df.empty:
         return None
 
-    closes = df["Close"].dropna()
+    # 兼容 yfinance 返回 MultiIndex 的情况
+    if isinstance(df.columns, pd.MultiIndex):
+        if "Close" in df.columns.get_level_values(0):
+            close_df = df["Close"]
+            if isinstance(close_df, pd.DataFrame):
+                closes = close_df.iloc[:, 0]
+            else:
+                closes = close_df
+        else:
+            return None
+    else:
+        if "Close" not in df.columns:
+            return None
+        closes = df["Close"]
+
+    closes = closes.dropna()
 
     if len(closes) < 2:
         return None
 
-    entry_price = float(closes.iloc[0])
+    # 保险转换成 float
+    entry_price = float(closes.iloc[0].item() if hasattr(closes.iloc[0], "item") else closes.iloc[0])
 
     exit_index = min(holding_days, len(closes) - 1)
-    exit_price = float(closes.iloc[exit_index])
+    exit_price = float(closes.iloc[exit_index].item() if hasattr(closes.iloc[exit_index], "item") else closes.iloc[exit_index])
 
     return exit_price / entry_price - 1
