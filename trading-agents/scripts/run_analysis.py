@@ -28,7 +28,7 @@ import sys
 import textwrap
 from datetime import datetime, timedelta
 from pathlib import Path
-from uncertainty.disagreement import AgentOutput, compute_disagreement
+from uncertainty.disagreement import AgentOutput, DisagreementResult, compute_disagreement
 from uncertainty.adaptive_decision import apply_adaptive_decision
 from uncertainty.evidence import Evidence, infer_stance_from_decision, score_evidence, detect_conflicts
 from uncertainty.review_memory import ReviewMemory
@@ -494,6 +494,29 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--skip-mx", action="store_true", help="跳过妙想数据采集（调试用）")
     parser.add_argument("--timeout", type=int, default=1200, help="子进程超时秒数（默认1200）")
     parser.add_argument("--retries", type=int, default=2, help="失败重试次数（默认2）")
+    
+    parser.add_argument(
+        "--disable-evidence-weight",
+        action="store_true",
+        help="消融实验：关闭证据可信度加权，使用固定证据权重"
+    )
+    parser.add_argument(
+        "--disable-disagreement",
+        action="store_true",
+        help="消融实验：关闭多维分歧诊断，不使用分歧惩罚"
+    )
+    parser.add_argument(
+        "--disable-review-memory",
+        action="store_true",
+        help="消融实验：关闭复盘记忆读取与写入"
+    )
+
+    parser.add_argument(
+        "--ablation-name",
+        default=None,
+        help="消融实验名称，例如 ours-full、wo-cw-rag、wo-dadm、wo-rmse"
+    )
+
     return parser.parse_args()
 
 
@@ -545,7 +568,13 @@ def infer_position_from_decision(decision: str, confidence: float) -> float:
     return 0.10 + 0.20 * confidence
 
 
-def run_uncertainty_layer(ticker: str, result: dict):
+def run_uncertainty_layer(
+    ticker: str,
+    result: dict,
+    use_evidence_weight: bool = True,
+    use_disagreement: bool = True,
+    use_review_memory: bool = True,
+):
 
 
     market_report = result.get("market_report", "")
@@ -619,24 +648,44 @@ def run_uncertainty_layer(ticker: str, result: dict):
         ),
     ]
 
-    memory = ReviewMemory()
+    memory = ReviewMemory() if use_review_memory else None
 
-    scored_evidences = []
-    for e in evidences:
-        source_rel = memory.get_source_reliability(e.source)
-        type_rel = memory.get_type_reliability(e.evidence_type)
-        historical_reliability = 0.5 * source_rel + 0.5 * type_rel
+    if use_evidence_weight:
+        scored_evidences = []
+        for e in evidences:
+            if memory:
+                source_rel = memory.get_source_reliability(e.source)
+                type_rel = memory.get_type_reliability(e.evidence_type)
+                historical_reliability = 0.5 * source_rel + 0.5 * type_rel
+            else:
+                historical_reliability = 0.5
 
-        scored_evidences.append(
-            score_evidence(
-                e,
-                evidences,
-                historical_reliability=historical_reliability,
+            scored_evidences.append(
+                score_evidence(
+                    e,
+                    evidences,
+                    historical_reliability=historical_reliability,
+                )
             )
-        )
 
-    evidences = scored_evidences
-    evidences = detect_conflicts(evidences)
+        evidences = scored_evidences
+        evidences = detect_conflicts(evidences)
+
+    else:
+        # 消融实验：关闭证据可信度加权，使用固定权重
+        fixed_weights = {
+            "market_report": 0.75,
+            "fundamentals_report": 0.85,
+            "sentiment_report": 0.65,
+            "news_report": 0.70,
+            "final_trade_decision": 0.90,
+        }
+
+        for e in evidences:
+            e.credibility_score = fixed_weights.get(e.evidence_id, 0.50)
+            e.conflict_ids = []
+
+        evidences = detect_conflicts(evidences)
 
     evidence_stance = {
         e.evidence_id: e.stance
@@ -701,14 +750,29 @@ def run_uncertainty_layer(ticker: str, result: dict):
         ),
     ]
 
-    disagreement = compute_disagreement(
-        outputs=outputs,
-        evidence_stance=evidence_stance,
-        evidence_weight=evidence_weight,
-    )
+    if use_disagreement:
+        disagreement = compute_disagreement(
+            outputs=outputs,
+            evidence_stance=evidence_stance,
+            evidence_weight=evidence_weight,
+        )
+    else:
+        # 消融实验：关闭分歧诊断
+        disagreement = DisagreementResult(
+            direction=0.0,
+            confidence=0.0,
+            evidence=0.0,
+            risk=0.0,
+            horizon=0.0,
+            total=0.0,
+            main_type="disabled",
+        )
 
     
-    rho = memory.get_disagreement_penalty(disagreement.main_type)
+    if use_review_memory and memory:
+        rho = memory.get_disagreement_penalty(disagreement.main_type)
+    else:
+        rho = 0.60
 
     decision = apply_adaptive_decision(
         ticker=ticker,
@@ -785,10 +849,45 @@ def main():
     result = run_tradingagents(ticker, date, market, mx_text, timeout=args.timeout, max_retries=args.retries)
 
     # Step 2.5: 不确定性诊断与风险自适应决策测试
-    uncertainty_result = run_uncertainty_layer(ticker, result)
+    uncertainty_result = run_uncertainty_layer(
+        ticker,
+        result,
+        use_evidence_weight=not args.disable_evidence_weight,
+        use_disagreement=not args.disable_disagreement,
+        use_review_memory=not args.disable_review_memory,
+    )
     result["uncertainty_analysis"] = uncertainty_result
-    memory = ReviewMemory()
-    memory.add_review(ticker, date, uncertainty_result)
+    
+    if args.ablation_name:
+        ablation_path = Path("data/ablation_results.json")
+        ablation_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if ablation_path.exists():
+            try:
+                ablation_results = json.loads(ablation_path.read_text(encoding="utf-8"))
+            except Exception:
+                ablation_results = {}
+        else:
+            ablation_results = {}
+
+        ablation_results[args.ablation_name] = uncertainty_result
+
+        ablation_path.write_text(
+            json.dumps(ablation_results, ensure_ascii=False, indent=2),
+            encoding="utf-8"
+        )
+
+        print(f"📊 消融实验结果已保存: {args.ablation_name}", file=sys.stderr)
+    if not args.disable_review_memory:
+        memory = ReviewMemory()
+        memory.add_review(ticker, date, uncertainty_result)
+    
+    print("\n========== 消融实验配置 ==========", file=sys.stderr)
+    print(f"证据可信度加权: {'关闭' if args.disable_evidence_weight else '开启'}", file=sys.stderr)
+    print(f"分歧诊断机制: {'关闭' if args.disable_disagreement else '开启'}", file=sys.stderr)
+    print(f"复盘记忆机制: {'关闭' if args.disable_review_memory else '开启'}", file=sys.stderr)
+    print("=================================\n", file=sys.stderr)
+    
     print("\n========== 不确定性诊断测试 ==========", file=sys.stderr)
     print(json.dumps(uncertainty_result, ensure_ascii=False, indent=2), file=sys.stderr)
     print("=====================================\n", file=sys.stderr)
@@ -798,7 +897,7 @@ def main():
         result["mx_context"] = mx_text
 
     if args.output_mode == "json":
-        print(json.dumps(result, ensure_ascii=False, indent=2))
+        print(json.dumps(result, ensure_ascii=True, indent=2))
     elif args.output_mode == "raw":
         print(result.get("final_trade_decision", ""))
     elif args.output_mode == "feishu-msg":
